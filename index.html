@@ -1,0 +1,2785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>收据工作台 · 多企业开据与台账</title>
+<style>
+:root{
+  --bg:#eef1f5; --panel:#ffffff; --line:#e1e6ec; --line2:#f0f3f7;
+  --ink:#1a2330; --sub:#69737f; --hint:#98a1ad;
+  --brand:#1f5f8b; --brand-d:#164a6d; --brand-l:#eaf2f8;
+  --ok:#1d7a52; --ok-l:#e8f5ef; --warn:#a8641a; --warn-l:#fdf2e3; --danger:#b3392f; --danger-l:#fdecea;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+  font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit;font-size:14px;color:inherit}
+input,select,textarea{outline:none}
+
+.app{display:flex;min-height:100vh}
+
+/* ---------- 侧栏 ---------- */
+.sidebar{
+  width:236px;flex:0 0 236px;background:var(--panel);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+}
+.brand{padding:20px 18px 14px;border-bottom:1px solid var(--line2)}
+.brand b{display:block;font-size:16px;font-weight:600;letter-spacing:.5px}
+.brand span{display:block;font-size:11px;color:var(--hint);letter-spacing:1.2px;margin-top:2px}
+.side-block{padding:14px 14px 10px;border-bottom:1px solid var(--line2)}
+.side-label{font-size:11px;color:var(--hint);margin-bottom:6px;letter-spacing:.5px}
+.side-block select{
+  width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd;
+}
+.side-block .hint{font-size:11px;color:var(--hint);margin-top:6px;line-height:1.45;word-break:break-all}
+nav{padding:10px 10px;flex:1;overflow:auto}
+nav button{
+  display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;margin-bottom:2px;
+  background:none;border:0;border-radius:8px;cursor:pointer;text-align:left;color:var(--sub);font-size:13.5px;
+}
+nav button:hover{background:#f5f7fa;color:var(--ink)}
+nav button.on{background:var(--brand-l);color:var(--brand-d);font-weight:600}
+nav button .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.4}
+nav button.on .dot{opacity:1}
+.side-foot{padding:12px 16px;border-top:1px solid var(--line2);font-size:11px;color:var(--hint);line-height:1.6}
+
+/* ---------- 主区 ---------- */
+main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{
+  height:60px;flex:0 0 60px;background:var(--panel);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:20;
+}
+.topbar h1{margin:0;font-size:16px;font-weight:600}
+.topbar .sub{font-size:12px;color:var(--hint);margin-left:10px;font-weight:400}
+.top-actions{display:flex;gap:8px;align-items:center}
+.bk-chip{
+  display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;
+  font-size:12px;color:#5c7688;background:#f2f6f9;border:1px solid #dde5ec;
+  border-radius:999px;cursor:pointer;white-space:nowrap;transition:.15s;
+}
+.bk-chip:hover{background:#e8f0f6;border-color:#c6d6e2;color:var(--brand-d)}
+.bk-chip .bdot{width:6px;height:6px;border-radius:50%;background:#3f9d6d;flex:0 0 auto}
+.bk-chip.warn{color:#8a5a12;background:#fff8ec;border-color:#efd9b2}
+.bk-chip.warn:hover{background:#fdf1dc;border-color:#e3c690}
+.bk-chip.warn .bdot{background:#e0a13b;box-shadow:0 0 0 3px rgba(224,161,59,.16)}
+.content{padding:20px 24px 60px;max-width:1500px;width:100%}
+
+.btn{
+  border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;
+  font-size:13px;color:var(--ink);transition:.15s;white-space:nowrap;
+}
+.btn:hover{border-color:#c9d2dc;background:#fafbfc}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-d);border-color:var(--brand-d)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--sub)}
+.btn.ghost:hover{background:#f0f3f7}
+.btn.danger{color:var(--danger);border-color:#f0d3d0}
+.btn.danger:hover{background:var(--danger-l)}
+.btn.sm{padding:5px 10px;font-size:12px;border-radius:6px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.card-h{padding:14px 18px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center}
+.card-h h2{margin:0;font-size:14px;font-weight:600}
+.card-h .tip{font-size:12px;color:var(--hint)}
+.card-b{padding:18px}
+
+.grid-new{display:grid;grid-template-columns:minmax(380px,1fr) 500px;gap:18px;align-items:start}
+@media (max-width:1180px){.grid-new{grid-template-columns:1fr}}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--sub);margin-bottom:5px}
+.field label i{color:var(--danger);font-style:normal;margin-left:2px}
+.field input[type=text],.field input[type=date],.field input[type=number],.field select,.field textarea{
+  width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd;transition:.15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#9dc0d8;background:#fff;box-shadow:0 0 0 3px rgba(31,95,139,.08)}
+.field textarea{resize:vertical;min-height:60px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* 明细行 */
+.items{border:1px solid var(--line);border-radius:8px;overflow:visible}
+.items-head,.item-row{display:grid;grid-template-columns:20px minmax(80px,1fr) 62px 68px 104px 26px;align-items:center;gap:6px;padding:6px 10px}
+.items-head{background:#f7f9fb;font-size:11px;color:var(--hint);border-bottom:1px solid var(--line2);border-radius:8px 8px 0 0}
+.item-row{border-bottom:1px solid var(--line2)}
+.item-row:last-child{border-bottom:0}
+.item-row .idx{font-size:12px;color:var(--hint);text-align:center}
+.item-row input{width:100%;border:0;background:transparent;padding:4px 2px}
+.item-row input.amt{text-align:right;font-variant-numeric:tabular-nums}
+.item-row .del{border:0;background:none;color:var(--hint);cursor:pointer;font-size:15px;line-height:1;padding:2px 4px;border-radius:4px}
+.item-row .del:hover{background:var(--danger-l);color:var(--danger)}
+.item-row input.qty,.item-row input.price{text-align:right;font-size:12.5px;font-variant-numeric:tabular-nums;color:#4a5966}
+.item-row input.qty::placeholder,.item-row input.price::placeholder{color:#b3bcc6;font-size:11px}
+/* 减项行（优惠 / 折扣）：整行淡黄底，金额框红色负数 */
+.item-row.disc{background:#fffaf1}
+.item-row.disc .idx{color:#b4741a;font-weight:600}
+.item-row input.amt.neg{color:#a32d2d;font-weight:600}
+.item-row input::-webkit-outer-spin-button,.item-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.item-row input[type=number]{-moz-appearance:textfield}
+.items-foot{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:#f7f9fb;border-top:1px solid var(--line2);border-radius:0 0 8px 8px}
+.items-foot .add{border:0;background:none;color:var(--brand);cursor:pointer;font-size:12.5px;padding:2px 0}
+.items-foot .total{font-size:13px}
+.items-foot .total b{font-size:16px;color:var(--brand-d);font-variant-numeric:tabular-nums}
+.cap-hint{font-size:11.5px;color:var(--hint);margin-top:6px}
+
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;padding-top:16px;border-top:1px solid var(--line2)}
+
+/* ---------- 预览 / 收据纸张 ---------- */
+.preview-wrap{position:sticky;top:80px}
+.preview-stage{
+  background:#e6eaf0;border:1px solid var(--line);border-radius:12px;padding:16px;overflow:auto;
+  display:flex;justify-content:center;justify-content:safe center;align-items:flex-start;
+  max-height:calc(100vh - 190px);
+}
+.zoom-note{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0 0;font-size:11.5px;color:var(--hint)}
+/* 缴费年度：起止两个年份选择器 */
+.period-inline{display:flex;align-items:center;gap:8px}
+.period-inline input[type=date],.period-inline select{flex:0 0 auto;width:auto;min-width:104px}
+.period-sep{color:var(--hint);font-size:12.5px;flex:0 0 auto}
+.zoom-bar{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.zbtn{
+  min-width:26px;height:26px;padding:0 6px;border:1px solid var(--line);background:#fff;border-radius:7px;
+  color:#3c4753;font-size:14px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  font-family:inherit;transition:background .12s,border-color .12s;
+}
+.zbtn:hover{background:#f1f6fa;border-color:#c3d2de}
+.zbtn:active{background:#e6eef5}
+.zbtn.wide{font-size:11.5px;letter-spacing:.02em}
+.zbtn.on{background:#eaf3f9;border-color:#9dc0d8;color:#1f5d80}
+.zpct{min-width:44px;text-align:center;font-size:11.5px;color:#3c4753;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+
+.sheet{background:#fff;box-shadow:0 2px 14px rgba(20,35,50,.13);display:flex;flex-direction:column;overflow:hidden;position:relative}
+/* 二联：上下排列，中间横切线裁开 */
+.sheet.rows{flex-direction:column}
+.cut-mark{position:absolute;width:8mm;height:0;border-top:.3pt dashed #b0b8c1;pointer-events:none;z-index:4}
+.cut-mark.hleft{left:0;top:50%}
+.cut-mark.hright{right:0;top:50%}
+.safe-guide{position:absolute;inset:5mm;border:1px dashed rgba(200,72,58,.5);pointer-events:none;border-radius:2px}
+
+/* ---------- 收据本体：单联 210×148.5（A4 竖放上下各一联），尺寸一律 mm / pt ---------- */
+.rc{
+  flex:1;display:flex;flex-direction:column;padding:6.5mm 9mm 4mm;
+  font-family:"SimSun","Songti SC","STSong",serif;color:#111;position:relative;overflow:hidden;
+  font-size:11.5pt;line-height:1.4;
+}
+/* 头：公司全称居中 · 编号日期靠右。左侧不再重复印企业/小区信息。 */
+.rc-top{display:flex;justify-content:flex-end;align-items:flex-start;min-height:10mm;padding-bottom:1.6mm;border-bottom:.6pt solid #222;position:relative}
+.rc-co{display:none}
+.rc-co small{display:block;font-weight:400;font-size:7.5pt;letter-spacing:0;color:#555;margin-top:.6mm;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-right{position:relative;z-index:1;text-align:right;white-space:nowrap;font-size:9pt;color:#333;line-height:1.35}
+.rc-no{font-family:Consolas,ui-monospace,monospace;font-size:9.4pt}
+.rc-copy{font-size:8pt;color:#666;letter-spacing:.06em;margin:0}
+.rc-sub{display:flex;justify-content:flex-end;align-items:baseline;gap:2.5mm}
+.rc-voidtag{display:inline-block;border:.5pt solid #b0392f;color:#b0392f;font-size:8pt;padding:0 .8mm;margin-top:.6mm;letter-spacing:.1em}
+.rc-title{position:absolute;z-index:0;left:0;right:0;top:0;text-align:center;font-size:18.5pt;font-weight:700;letter-spacing:.06em;text-indent:.06em;line-height:1.25;padding:0 18mm;max-width:none;overflow:visible;white-space:nowrap}
+.rc-row{display:flex;align-items:baseline;gap:1.6mm;font-size:11.5pt;margin-bottom:1.25mm}
+.rc-top+.rc-row{margin-top:2.4mm}
+.rc-row .k{flex:0 0 auto;color:#222;white-space:nowrap}
+.rc-row .v{flex:1;min-width:0;border-bottom:.4pt dotted #999;padding:0 1mm .4mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-row .v.fixed-30{flex:0 0 30mm}
+.rc-row .v.fixed-24{flex:0 0 24mm}
+.rc-row .v.fixed-36{flex:0 0 36mm}
+.rc-tbl{width:100%;border-collapse:collapse;margin-top:1.2mm;table-layout:fixed}
+.rc-tbl th,.rc-tbl td{padding:1.6mm 1.6mm;font-size:12pt;vertical-align:middle;word-break:break-all}
+.rc-tbl thead th{border-top:.8pt solid #222;border-bottom:.5pt solid #222;font-weight:400;color:#333;text-align:left}
+.rc-tbl tbody td{border-bottom:.3pt solid #c9c9c9}
+.rc-tbl tbody tr:last-child td{border-bottom:.8pt solid #222}
+.rc-tbl .n{text-align:right;font-variant-numeric:tabular-nums}
+.rc-tbl .c{text-align:center}
+.rc-tbl td.minus{color:#a32d2d}
+.rc-tbl tr.sum td{border-top:.5pt solid #222;font-weight:700}
+.rc-total{display:flex;justify-content:space-between;align-items:baseline;gap:5mm;margin-top:2.4mm}
+.rc-cn{font-size:11.5pt;min-width:0;line-height:1.4}
+.rc-cn b{letter-spacing:.1em}
+.rc-num{font-size:15.5pt;font-weight:700;font-family:Consolas,ui-monospace,monospace;white-space:nowrap;letter-spacing:.02em}
+.rc-memo{
+  flex:1;min-height:7mm;border:.4pt solid #d8d8d8;border-radius:1.2mm;margin-top:2.2mm;
+  padding:1.4mm 2.2mm;font-size:10pt;color:#333;display:flex;gap:2.2mm;align-items:flex-start;
+}
+.rc-memo .k{color:#777;flex:0 0 auto}
+.rc-memo .t{flex:1;min-width:0;white-space:pre-wrap;word-break:break-all}
+.rc-sign{display:flex;align-items:flex-end;gap:5mm;margin-top:auto;padding-top:2mm;border-top:.4pt solid #dedede;font-size:10pt;color:#222}
+.rc-sign .cell{white-space:nowrap;display:flex;align-items:center;gap:2mm}
+.rc-sign .grow{flex:1}
+/* 盖章处只留白，不印任何章（实体章手工盖） */
+.seal-space{display:inline-block;width:30mm;height:12mm;vertical-align:bottom}
+.rc-foot{display:flex;justify-content:space-between;gap:4mm;font-size:8.5pt;color:#666;margin-top:1.3mm;padding-top:1mm;border-top:.3pt solid #e2e2e2}
+
+.rc.voided::after{
+  content:"作 废";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:44pt;color:rgba(179,57,47,.16);letter-spacing:.12em;transform:rotate(-14deg);pointer-events:none;
+}
+
+/* 明细超过 6 行自动压紧，避免溢出纸外 */
+.rc.dense{font-size:10pt;padding:5.5mm 9mm 3mm}
+.rc.dense .rc-title{font-size:16.5pt}
+.rc.dense .rc-tbl th,.rc.dense .rc-tbl td{padding:.85mm 1.6mm;font-size:9.8pt}
+.rc.dense .rc-memo{min-height:6mm;margin-top:1.4mm}
+.rc.dense .rc-sign{padding-top:1.6mm}
+.rc.dense .seal-space{height:10mm}
+/* 10 行以上再压一档，保证不溢出一联 */
+.rc.xdense{padding:5mm 9mm 3mm}
+.rc.xdense .rc-tbl th,.rc.xdense .rc-tbl td{padding:.55mm 1.6mm;font-size:9.1pt}
+.rc.xdense .rc-title{font-size:15.5pt}
+.rc.xdense .rc-row{font-size:10pt;margin-bottom:.9mm}
+.rc.xdense .rc-memo{min-height:4mm;margin-top:1.2mm;padding:1.1mm 2mm}
+.rc.xdense .rc-sign{padding-top:1.2mm}
+.rc.xdense .seal-space{width:26mm;height:9mm}
+.rc.xdense .rc-total{margin-top:1.6mm}
+.rc.xdense .rc-num{font-size:14pt}
+/* 13 行以上的极端情况：字号再收一档，宁可小也不许溢出到下一联 */
+.rc.xtd .rc-tbl th,.rc.xtd .rc-tbl td{padding:.35mm 1.4mm;font-size:8.2pt}
+.rc.xtd .rc-row{font-size:9.2pt;margin-bottom:.7mm}
+.rc.xtd .rc-memo{min-height:3mm}
+.rc.xtd .seal-space{height:8mm}
+.rc.xtd .rc-total{margin-top:1.2mm}
+
+/* 套打模式：只打字，不画线 */
+.sheet.overlay .rc-tbl th,.sheet.overlay .rc-tbl td{border-color:transparent !important}
+.sheet.overlay .rc-tbl tr.sum td{border-color:transparent !important}
+.sheet.overlay .rc-row .v{border-bottom-color:transparent}
+.sheet.overlay .rc-sign{border-top-color:transparent}
+.sheet.overlay .rc-foot{display:none}
+
+/* ---------- 选项选择器（项目 / 人员） ---------- */
+.combo{position:relative;display:flex;align-items:center;min-width:0;width:100%}
+.combo input{flex:1;min-width:0;width:100%}
+/* 表单里的选择器：整体做成一个输入框的样子，箭头在框内 */
+.combo-field{
+  border:1px solid var(--line);border-radius:8px;background:#fbfcfd;transition:.15s;padding-right:2px;
+}
+.combo-field:focus-within{border-color:#9dc0d8;background:#fff;box-shadow:0 0 0 3px rgba(31,95,139,.08)}
+.combo-field input,.combo-field input:focus{
+  border:0 !important;background:transparent !important;box-shadow:none !important;padding:9px 0 9px 11px;
+}
+.combo-field .combo-btn{font-size:10px;padding:4px 6px}
+.combo-btn{
+  flex:0 0 auto;border:0;background:none;color:var(--hint);cursor:pointer;font-size:9px;
+  padding:2px 4px;line-height:1;border-radius:4px;
+}
+.combo-btn:hover{background:var(--brand-l);color:var(--brand)}
+.combo.open .combo-btn{color:var(--brand)}
+.combo-pop{
+  position:absolute;top:calc(100% + 5px);left:0;z-index:70;min-width:230px;max-width:320px;max-height:270px;overflow:auto;display:none;
+  background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 26px rgba(20,35,50,.16);padding:5px;
+}
+.combo-pop .cp-tip{padding:5px 9px 6px;font-size:11px;color:var(--hint)}
+.combo-pop .cp-item{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:7px 9px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1.35;
+}
+.combo-pop .cp-item:hover{background:var(--brand-l)}
+.combo-pop .cp-item.on{background:var(--brand-l);color:var(--brand-d)}
+.combo-pop .cp-item .ic{font-size:10px;color:var(--hint);flex:0 0 auto}
+.combo-pop .cp-item .x{
+  flex:0 0 auto;font-size:11px;color:var(--hint);padding:1px 4px;border-radius:4px;opacity:0;
+}
+.combo-pop .cp-item:hover .x{opacity:1}
+.combo-pop .cp-item .x:hover{background:var(--danger-l);color:var(--danger)}
+.combo-pop .cp-new{
+  display:flex;align-items:center;gap:6px;border-top:1px solid var(--line2);
+  margin-top:4px;padding:8px 9px;color:var(--brand);cursor:pointer;font-size:12.5px;border-radius:0 0 6px 6px;
+}
+.combo-pop .cp-new:hover{background:var(--brand-l)}
+.combo-pop .cp-new b{font-weight:600;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.combo-pop .cp-empty{padding:9px;font-size:12px;color:var(--hint);line-height:1.5}
+
+/* 档案里的名单标签 */
+.tag-list{display:flex;flex-wrap:wrap;gap:7px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd;min-height:42px}
+.tag{
+  display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--line);
+  border-radius:7px;padding:4px 7px;font-size:12.5px;color:var(--ink);
+}
+.tag.def{border-color:#9dc0d8;background:var(--brand-l);color:var(--brand-d)}
+.tag.off{opacity:.55;text-decoration:line-through}
+.tag .tbtn{border:0;background:none;cursor:pointer;color:var(--hint);font-size:11px;padding:0 1px;line-height:1}
+.tag .tbtn:hover{color:var(--danger)}
+.tag .tbtn.star:hover{color:#c48a12}
+.tag .def-mark{font-size:10px;color:var(--brand);letter-spacing:.5px}
+
+/* ---------- 表格 ---------- */
+.tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+table.tbl th{
+  background:#f7f9fb;text-align:left;font-weight:500;color:var(--sub);font-size:12px;
+  padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;
+}
+table.tbl td{padding:10px 12px;border-bottom:1px solid var(--line2);vertical-align:middle}
+table.tbl tr:last-child td{border-bottom:0}
+table.tbl tbody tr:hover{background:#fafbfc}
+/* 整行可点：打开收据预览 */
+table.tbl tbody tr.row-click{cursor:pointer}
+table.tbl tbody tr.row-click:hover{background:#f3f8fc}
+table.tbl tbody tr.row-click:hover td:first-child{box-shadow:inset 2px 0 0 #7fb0cd}
+table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.tbl td.mono{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--sub)}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:11px;line-height:1.6}
+.badge.ok{background:var(--ok-l);color:var(--ok)}
+.badge.void{background:var(--danger-l);color:var(--danger)}
+.badge.off{background:#f0f0ee;color:var(--hint)}
+.rowacts{display:flex;gap:4px;white-space:nowrap}
+
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.filters .f{display:flex;flex-direction:column;gap:4px}
+.filters label{font-size:11px;color:var(--hint)}
+.filters input,.filters select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;min-width:120px}
+.sum-bar{display:flex;gap:22px;padding:12px 16px;background:#f7f9fb;border:1px solid var(--line);border-radius:10px;margin-bottom:14px;flex-wrap:wrap;font-size:13px}
+.sum-bar div span{color:var(--hint);font-size:12px;margin-right:6px}
+.sum-bar div b{font-variant-numeric:tabular-nums;font-size:15px}
+
+/* ---------- 企业卡片 ---------- */
+.co-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.co-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;position:relative}
+.co-card.off{background:#fafafa;opacity:.75}
+.co-card h3{margin:0 0 4px;font-size:14px;font-weight:600;padding-right:56px;word-break:break-all}
+.co-card .code{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:var(--brand);background:var(--brand-l);display:inline-block;padding:1px 7px;border-radius:5px;margin-bottom:10px}
+.co-card dl{margin:0;font-size:12px;color:var(--sub);display:grid;grid-template-columns:52px 1fr;gap:3px 8px;word-break:break-all}
+.co-card dl dt{color:var(--hint)}
+.co-card .acts{position:absolute;top:12px;right:12px;display:flex;gap:2px}
+.co-card .foot{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--hint);display:flex;justify-content:space-between}
+
+/* ---------- 统计 ---------- */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.stat .k{font-size:12px;color:var(--hint);margin-bottom:6px}
+.stat .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.stat .v small{font-size:12px;font-weight:400;color:var(--hint);margin-left:4px;letter-spacing:0}
+.stat .d{font-size:11.5px;color:var(--sub);margin-top:4px}
+.bars{display:flex;align-items:flex-end;gap:14px;height:150px;padding:10px 4px 0;border-bottom:1px solid var(--line)}
+.bars .b{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px}
+.bars .b .bar{width:100%;max-width:52px;background:#b9d4e6;border-radius:5px 5px 0 0;min-height:2px;transition:.3s;position:relative}
+.bars .b .bar.hi{background:var(--brand)}
+.bars .b .lb{font-size:11px;color:var(--hint);white-space:nowrap}
+.bars .b .val{font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}
+.mix{display:flex;flex-direction:column;gap:9px}
+.mix .r{display:grid;grid-template-columns:64px 1fr 90px;gap:10px;align-items:center;font-size:12.5px}
+.mix .track{height:8px;background:#eef1f5;border-radius:4px;overflow:hidden}
+.mix .fill{height:100%;background:var(--brand);border-radius:4px}
+.mix .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--sub)}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:1100px){.two-col{grid-template-columns:1fr}}
+
+.empty{padding:44px 20px;text-align:center;color:var(--hint);font-size:13px}
+.empty b{display:block;font-size:14px;color:var(--sub);margin-bottom:6px;font-weight:500}
+
+.note-box{background:var(--warn-l);border:1px solid #f0dfc4;color:#7a5216;padding:11px 14px;border-radius:9px;font-size:12.5px;line-height:1.65}
+.note-box.blue{background:var(--brand-l);border-color:#cfe0eb;color:#25506d}
+.note-box b{font-weight:600}
+
+/* 弹层 */
+.modal{position:fixed;inset:0;background:rgba(20,30,42,.42);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;width:100%;max-width:560px;max-height:88vh;overflow:auto;box-shadow:0 20px 50px rgba(15,25,38,.22)}
+/* 收据预览弹层：加宽，纸张按可用宽度自动缩放 */
+.modal-box.wide{max-width:920px}
+.modal-box.wide .modal-b{padding:14px}
+.rc-view{background:#e9edf2;border-radius:11px;padding:12px;display:flex;justify-content:center;justify-content:safe center;overflow:auto;max-height:calc(88vh - 150px)}
+.rc-view-stage{flex:0 0 auto;position:relative;box-shadow:0 3px 16px rgba(20,35,50,.14)}
+.rc-view-stage .sheet{box-shadow:none}
+.modal-h{padding:16px 20px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center}
+.modal-h h3{margin:0;font-size:15px;font-weight:600}
+.modal-b{padding:20px}
+.modal-f{padding:14px 20px;border-top:1px solid var(--line2);display:flex;justify-content:flex-end;gap:9px;position:sticky;bottom:0;background:#fff}
+.x{border:0;background:none;font-size:20px;color:var(--hint);cursor:pointer;line-height:1;padding:2px 6px;border-radius:6px}
+.x:hover{background:#f0f3f7}
+
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translate(-50%,14px);background:#1f2937;color:#fff;
+  padding:10px 18px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:200;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:#a5352c}
+
+/* 打印 */
+#printArea{display:none}
+@media print{
+  html,body{background:#fff !important;margin:0 !important;padding:0 !important}
+  .app,.modal,.toast{display:none !important}
+  #printArea{display:block !important;margin:0;padding:0}
+  .sheet{box-shadow:none;margin:0;page-break-after:always;break-after:page;overflow:hidden}
+  .sheet:last-child{page-break-after:auto;break-after:auto}
+  .rc{break-inside:avoid}
+  .sheet{border:0 !important}
+  body.no-color .rc{background:#fff !important}
+}
+</style>
+<style id="pageStyle"></style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><b>收据工作台</b><span>RECEIPT WORKBENCH</span></div>
+    <div class="side-block">
+      <div class="side-label">当前开据企业</div>
+      <select id="companySelect"></select>
+      <div class="hint" id="companyHint">—</div>
+    </div>
+    <nav id="nav">
+      <button data-view="new" class="on"><span class="dot"></span>开收据</button>
+      <button data-view="ledger"><span class="dot"></span>收据台账</button>
+      <button data-view="stats"><span class="dot"></span>收款统计</button>
+      <button data-view="companies"><span class="dot"></span>企业档案</button>
+      <button data-view="settings"><span class="dot"></span>设置与备份</button>
+    </nav>
+    <div class="side-foot">
+      内账管理工具 · 数据存本机浏览器<br>
+      收据不作为发票使用
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div style="display:flex;align-items:baseline">
+        <h1 id="pageTitle">开收据</h1>
+        <span class="sub" id="pageSub"></span>
+      </div>
+      <div class="top-actions" id="topActions"></div>
+    </div>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-h"><h3 id="modalTitle">标题</h3><button class="x" onclick="closeModal()">&times;</button></div>
+    <div class="modal-b" id="modalBody"></div>
+    <div class="modal-f" id="modalFoot"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="printArea"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ================= 基础工具 ================= */
+  const KEY = 'wb_receipt_workbench_v1';
+  const KEY_BAK = 'wb_receipt_workbench_v1_bak';   /* 上一版数据的自动快照，主数据写坏时用它救 */
+  let recoveredFromBak = false;                    /* 本次启动是否从快照恢复过 */
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.prototype.slice.call(document.querySelectorAll(s));
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const pad = (n, l) => String(n).padStart(l || 2, '0');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function monthOf(s){ return String(s || '').slice(0, 7); }
+  function num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+  function money(n){ return '¥' + num(n).toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+  function moneyPlain(n){ return num(n).toFixed(2); }
+
+  /* 人民币大写：全程用「分」的整数运算，避免浮点误差 */
+  const CN_DIGIT = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'];
+  const CN_U1 = ['','拾','佰','仟'];
+  const CN_U2 = ['','万','亿','万亿'];
+
+  function intToChinese(n){
+    if (n === 0) return '零';
+    let str = '';
+    let group = 0;
+    let prevPart = -1;
+    while (n > 0 && group < 4){
+      const part = n % 10000;
+      let ps = '';
+      let zero = false;
+      for (let i = 0; i < 4; i++){
+        const d = Math.floor(part / Math.pow(10, i)) % 10;
+        if (d === 0){ zero = true; }
+        else {
+          if (zero && ps) ps = '零' + ps;
+          zero = false;
+          ps = CN_DIGIT[d] + CN_U1[i] + ps;
+        }
+      }
+      if (ps){
+        let tail = str;
+        if (tail && prevPart > 0 && prevPart < 1000 && tail.charAt(0) !== '零') tail = '零' + tail;
+        str = ps + CN_U2[group] + tail;
+      }
+      prevPart = part;
+      n = Math.floor(n / 10000);
+      group++;
+    }
+    return str || '零';
+  }
+
+  function rmbUpper(n){
+    const raw = num(n);
+    const neg = raw < 0;
+    const cents = Math.round(Math.abs(raw) * 100);
+    const intPart = Math.floor(cents / 100);
+    const jiao = Math.floor(cents / 10) % 10;
+    const fen = cents % 10;
+    let out = intToChinese(intPart) + '元';
+    if (jiao === 0 && fen === 0){
+      out += '整';
+    } else {
+      if (jiao === 0 && fen > 0) out += '零';
+      if (jiao > 0) out += CN_DIGIT[jiao] + '角';
+      if (fen > 0) out += CN_DIGIT[fen] + '分';
+      if (fen === 0) out += '整';
+    }
+    return (neg ? '负' : '') + out;
+  }
+
+  /* ================= 纸张方案 ================= */
+  /* 一张 A4 竖放（210×297），上下各一联（210×148.5），中间横切线裁开 */
+  const PAPERS = {
+    a4x2: {
+      key:'a4x2', name:'A4 二联 210×297（竖向）', w:210, h:297,
+      slipW:210, slipH:148.5, count:2, axis:'h',
+      note:'一张 A4 竖向打两联，上下横切，裁完每联 210×148.5'
+    }
+  };
+
+  const METHODS = ['现金','微信','支付宝','银行转账','对公转账','刷卡','其他'];
+
+  /* ================= 状态 ================= */
+  let state = null;
+  let view = 'new';
+  let editId = null;
+  let ledgerFilter = { companyId:'', from:'', to:'', kw:'', status:'' };
+  let statsFilter = { companyId:'' };
+  let statRange = 'month';
+  let lastPrint = [];
+  const MAX_ITEM_ROWS = 5;
+
+  function blankState(){
+    return {
+      version: 2,
+      companies: [{
+        id: uid(), name:'新疆昆暖新能科技有限公司', short:'昆暖新能', prefix:'KN',
+        taxNo:'', addr:'公路花苑小区', tel:'', bank:'', account:'',
+        seal:'', sealPic:'', active:true, createdAt: todayStr(),
+        items: [
+          { name:'采暖费', active:true },
+          { name:'报停费', active:true },
+          { name:'入网费', active:true },
+          { name:'滞纳金', active:true },
+          { name:'优惠', active:true },
+          { name:'其他', active:true }
+        ],
+        handlers: []
+      }],
+      itemLib: [],
+      addrLib: [{ name:'公路花苑小区', active:true }],
+      receipts: [],
+      settings: {
+        paper:'a4x2', copies:1, printColor:false, overlay:false,
+        offsetX:0, offsetY:0, scale:100,
+        autoNo:true,
+        showFrame:true, showFootNote:true,
+        lastBackupAt:0, lastBackupCount:0   /* 上次导出完整备份的时间 / 当时的收据张数 */
+      },
+      currentCompanyId: null
+    };
+  }
+
+  function normalizeState(d){
+    if (!d || !Array.isArray(d.companies)) return null;
+    d.settings = Object.assign(blankState().settings, d.settings || {});
+    if (!PAPERS[d.settings.paper]) d.settings.paper = 'a4x2';
+    d.settings.copies = 1;
+    d.receipts = Array.isArray(d.receipts) ? d.receipts : [];
+    d.itemLib = Array.isArray(d.itemLib) ? d.itemLib : [];
+    d.addrLib = Array.isArray(d.addrLib) ? d.addrLib : [];
+    return d;
+  }
+
+  function load(){
+    let broken = false;
+    try{
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return blankState();
+      const d = normalizeState(JSON.parse(raw));
+      if (d) return d;
+      broken = true;
+    }catch(e){ broken = true; }
+
+    /* 主数据坏了：先把坏数据原样留一份，再用自动快照兜底 */
+    if (broken){
+      try{ localStorage.setItem(KEY + '_damaged_' + Date.now(), localStorage.getItem(KEY) || ''); }catch(e){}
+    }
+    try{
+      const bak = localStorage.getItem(KEY_BAK);
+      if (bak){
+        const b = normalizeState(JSON.parse(bak));
+        if (b){
+          recoveredFromBak = true;
+          /* 立刻把主数据修好，别让下次再来一遍；也不走 save()，免得坏数据被写进快照 */
+          try{ localStorage.setItem(KEY, JSON.stringify(b)); }catch(e){}
+          return b;
+        }
+      }
+    }catch(e){}
+    return blankState();
+  }
+  function save(){
+    try{
+      /* 写之前先把「上一份能读通的数据」留成快照，代码改坏了也能退回去 */
+      const prev = localStorage.getItem(KEY);
+      if (prev && prev.length > 2){
+        try{ JSON.parse(prev); localStorage.setItem(KEY_BAK, prev); }catch(e){}
+      }
+      localStorage.setItem(KEY, JSON.stringify(state));
+    }
+    catch(e){ toast('保存失败：浏览器存储不可用，请改用 Chrome 打开本文件', true); }
+  }
+
+  /* 旧数据迁移：统一到 v2 结构（项目/经手人改成可复用的选项名单） */
+  function migrate(d){
+    let changed = false;
+
+    d.companies = Array.isArray(d.companies) ? d.companies : [];
+    d.companies.forEach(c => {
+      if ('template' in c){ delete c.template; changed = true; }
+      if ('defaultPrice' in c){ delete c.defaultPrice; changed = true; }
+      /* 老的 chargeItems（字符串数组）→ items（{name, active}） */
+      if (Array.isArray(c.chargeItems) || typeof c.chargeItems === 'string'){
+        const old = typeof c.chargeItems === 'string'
+          ? c.chargeItems.split(/[,，、\s]+/) : c.chargeItems;
+        const cur = Array.isArray(c.items) ? c.items.slice() : [];
+        const has = {};
+        cur.forEach(it => { has[it.name] = 1; });
+        old.filter(Boolean).forEach(n => {
+          if (!has[n]){ cur.push({ name:n, active:true }); has[n] = 1; }
+        });
+        c.items = cur;
+        delete c.chargeItems;
+        changed = true;
+      }
+      if (!Array.isArray(c.items)){ c.items = []; changed = true; }
+      /* 老的单一 handler 字符串 → handlers 名单，并设为默认 */
+      if (typeof c.handler === 'string'){
+        const nm = c.handler.trim();
+        if (!Array.isArray(c.handlers)) c.handlers = [];
+        if (nm && !c.handlers.some(h => h.name === nm)){
+          c.handlers.push({ name:nm, default: c.handlers.length === 0, active:true });
+        }
+        delete c.handler;
+        changed = true;
+      }
+      if (!Array.isArray(c.handlers)){ c.handlers = []; changed = true; }
+      c.handlers.forEach(h => { if (typeof h.default !== 'boolean') h.default = false; if (typeof h.defDrawer !== 'boolean') h.defDrawer = false; if (typeof h.active !== 'boolean') h.active = true; });
+    });
+
+    if (!Array.isArray(d.itemLib)){ d.itemLib = []; changed = true; }
+
+    /* 地址库：全局共用；老收据里出现过的地址自动收进来，开票时点一下就选 */
+    if (!Array.isArray(d.addrLib)){ d.addrLib = []; changed = true; }
+    if (!d.addrLib.some(x => x.name === '公路花苑小区')){ d.addrLib.push({ name:'公路花苑小区', active:true }); changed = true; }
+
+    d.receipts = Array.isArray(d.receipts) ? d.receipts : [];
+    d.receipts.forEach(r => {
+      if (r.template || Array.isArray(r.lines)){
+        const items = [];
+        (r.lines || []).forEach(l => {
+          const nm = [l.item, l.year ? l.year + '年度' : '', num(l.qty) ? num(l.qty) + '㎡' : ''].filter(Boolean).join(' · ');
+          const prin = num(l.prin);
+          if (prin) items.push({ name: nm || '本金', qty: num(l.qty), price: num(l.price), amt: prin, sign: 1 });
+          if (num(l.disc)) items.push({ name: '优惠', qty: 0, price: 0, amt: num(l.disc), sign: -1 });
+          if (num(l.late)) items.push({ name: '滞纳金', qty: 0, price: 0, amt: num(l.late), sign: -1 });
+        });
+        if (items.length) r.items = items;
+        delete r.lines; delete r.template;
+        changed = true;
+      }
+      /* 取消「加/减」开关后，旧的减项统一转成负金额，合计保持不变 */
+      (r.items || []).forEach(it => {
+        if ('sign' in it){
+          if (it.sign === -1) it.amt = -Math.abs(num(it.amt));
+          delete it.sign;
+          changed = true;
+        }
+      });
+      /* 地址 / 房号 / 电话补齐字段（老数据只有 addr，房号留空不硬拆） */
+      if (!('room' in r)){ r.room = ''; changed = true; }
+      if (!('addr' in r)){ r.addr = ''; changed = true; }
+      if (!('phone' in r)){ r.phone = ''; changed = true; }
+      /* 缴费年度（起止年份），老票留空 */
+      if (!('periodFrom' in r)){ r.periodFrom = ''; changed = true; }
+      if (!('periodTo' in r)){ r.periodTo = ''; changed = true; }
+      /* 老票存的完整日期 → 只留年份 */
+      ['periodFrom', 'periodTo'].forEach(k => {
+        const v = String(r[k] || '');
+        if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(v)){ r[k] = v.slice(0, 4); changed = true; }
+        else if (v && !/^\d{4}$/.test(v)){ r[k] = ''; changed = true; }
+      });
+      /* 老票的经手人 → 收款人（开据人留空） */
+      if (!('payee' in r)){ r.payee = String(r.handler || '').trim(); changed = true; }
+      if (!('drawer' in r)){ r.drawer = ''; changed = true; }
+      /* 老票上的地址补进地址库，下次开票直接选 */
+      const a = String(r.addr || '').trim();
+      if (a && !d.addrLib.some(x => x.name === a)){ d.addrLib.push({ name:a, active:true }); changed = true; }
+    });
+
+    /* 一张 A4 打两联；老数据一次性升级到二联（之后用户手动选单张不再被覆盖） */
+    const st = d.settings || {};
+    if (st.copies !== 1){ st.copies = 1; changed = true; }
+    if (st.paperV !== 3){ st.paper = 'a4x2'; st.paperV = 3; changed = true; }
+    if (!PAPERS[st.paper]){ st.paper = 'a4x2'; changed = true; }
+    /* 口令功能已下线：顺手清掉历史遗留的口令哈希 */
+    if ('passHash' in st){ delete st.passHash; changed = true; }
+    d.settings = st;
+    d.version = 2;
+    return changed;
+  }
+
+  state = load();
+  if (!state.companies.length) state.companies = blankState().companies;
+  /* 旧版占位企业自动升级成当前默认企业，且保留原 id 不影响已有引用 */
+  if (state.companies.length === 1 && state.companies[0].name === '示例商贸有限公司' && !state.receipts.length){
+    const oldId = state.companies[0].id;
+    const fresh = blankState().companies[0];
+    fresh.id = oldId;
+    state.companies = [fresh];
+    state.currentCompanyId = oldId;
+  }
+  if (!state.currentCompanyId || !state.companies.some(c => c.id === state.currentCompanyId)){
+    state.currentCompanyId = state.companies[0].id;
+  }
+  if (migrate(state)) save();
+
+  const getCo = id => state.companies.find(c => c.id === id) || null;
+  const activeCompanies = () => state.companies.filter(c => c.active !== false);
+
+  function toast(msg, err){
+    const t = $('#toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (err ? ' err' : '');
+    clearTimeout(t._t);
+    t._t = setTimeout(() => { t.className = 'toast'; }, 2400);
+  }
+
+  /* 编号：企业开头 + 年月日 + 当日流水（三位），全自动、不可改 */
+  function noDatePart(dateStr){
+    return String(dateStr || todayStr()).replace(/-/g, '').slice(0, 8);
+  }
+  function noHead(companyId, dateStr){
+    const co = getCo(companyId);
+    return ((co && co.prefix) || 'SJ') + '-' + noDatePart(dateStr) + '-';
+  }
+  function nextNo(companyId, dateStr){
+    const head = noHead(companyId, dateStr);
+    let max = 0;
+    state.receipts.forEach(r => {
+      if (r.companyId !== companyId) return;
+      if (!r.no || r.no.indexOf(head) !== 0) return;
+      const m = r.no.slice(head.length).match(/^\d+/);
+      if (m) max = Math.max(max, parseInt(m[0], 10));
+    });
+    return head + pad(max + 1, 3);
+  }
+
+  /* 收款人 / 开据人：企业人员名单里的默认项（名单两个角色共用） */
+  function defaultPerson(co, role){
+    if (!co || !Array.isArray(co.handlers)) return '';
+    const list = co.handlers.filter(h => h.active !== false);
+    const key = role === 'drawer' ? 'defDrawer' : 'default';
+    const d = list.find(h => h[key]) || (role === 'drawer' ? null : list[0]);
+    return d ? d.name : '';
+  }
+
+  /* 选项来源：项目 = 企业专属 + 全局库；经手人 = 企业名单；地址 = 全局地址库 */
+  function optionList(kind, co){
+    const out = [];
+    const seen = {};
+    const push = (name, scope, extra) => {
+      name = String(name || '').trim();
+      if (!name || seen[name]) return;
+      seen[name] = 1;
+      out.push(Object.assign({ name:name, scope:scope }, extra || {}));
+    };
+    if (kind === 'item'){
+      ((co && co.items) || []).forEach(it => { if (it.active !== false) push(it.name, 'co'); });
+      (state.itemLib || []).forEach(it => { if (it.active !== false) push(it.name, 'global'); });
+    } else if (kind === 'addr'){
+      (state.addrLib || []).forEach(it => { if (it.active !== false) push(it.name, 'global'); });
+    } else {
+      ((co && co.handlers) || []).forEach(h => { if (h.active !== false) push(h.name, 'co', { def: !!h.default }); });
+    }
+    return out;
+  }
+
+  /* 新增选项：项目进企业库（可同时入全局库）；经手人只进企业库；地址进全局地址库 */
+  function addOption(kind, name, co, toGlobal){
+    name = String(name || '').trim();
+    if (!name) return false;
+    if (kind === 'addr'){
+      state.addrLib = Array.isArray(state.addrLib) ? state.addrLib : [];
+      if (state.addrLib.some(x => x.name === name)){
+        const hit = state.addrLib.find(x => x.name === name);
+        hit.active = true;
+        save();
+        return false;
+      }
+      state.addrLib.push({ name:name, active:true });
+      save();
+      return true;
+    }
+    if (!co) return false;
+    if (kind === 'handler'){
+      co.handlers = Array.isArray(co.handlers) ? co.handlers : [];
+      if (co.handlers.some(h => h.name === name)) return false;
+      co.handlers.push({ name:name, default: co.handlers.filter(h => h.active !== false).length === 0, defDrawer:false, active:true });
+    } else {
+      co.items = Array.isArray(co.items) ? co.items : [];
+      if (!co.items.some(it => it.name === name)) co.items.push({ name:name, active:true });
+      if (toGlobal){
+        state.itemLib = Array.isArray(state.itemLib) ? state.itemLib : [];
+        if (!state.itemLib.some(it => it.name === name)) state.itemLib.push({ name:name, active:true });
+      }
+    }
+    save();
+    return true;
+  }
+
+  /* ================= 视图切换 ================= */
+  const TITLES = {
+    new: ['开收据', '填完直接预览，确认无误再保存'],
+    ledger: ['收据台账', '所有已开收据可查、可补打、可作废'],
+    stats: ['收款统计', '看清哪家收得多、钱从哪些渠道进来'],
+    companies: ['企业档案', '每家企业独立抬头、编号与人员名单'],
+    settings: ['设置与备份', '打印纸张、全局项目库、数据备份']
+  };
+
+  function switchView(v){
+    view = v;
+    if (v === 'new') editId = null;
+    $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+    $('#pageTitle').textContent = TITLES[v][0];
+    $('#pageSub').textContent = TITLES[v][1];
+    render();
+  }
+
+  function render(){
+    renderCompanySelect();
+    renderTopActions();
+    const c = $('#content');
+    if (view === 'new') c.innerHTML = viewNew();
+    else if (view === 'ledger') c.innerHTML = viewLedger();
+    else if (view === 'stats') c.innerHTML = viewStats();
+    else if (view === 'companies') c.innerHTML = viewCompanies();
+    else c.innerHTML = viewSettings();
+    afterRender();
+  }
+
+  function renderCompanySelect(){
+    const sel = $('#companySelect');
+    sel.innerHTML = state.companies.map(c =>
+      '<option value="' + c.id + '"' + (c.id === state.currentCompanyId ? ' selected' : '') + '>' +
+      esc(c.short || c.name) + (c.active === false ? '（已停用）' : '') + '</option>'
+    ).join('');
+    const co = getCo(state.currentCompanyId);
+    $('#companyHint').textContent = co ? (co.name + (co.taxNo ? ' · ' + co.taxNo : '')) : '先去「企业档案」建一家';
+  }
+
+  function renderTopActions(){
+    const box = $('#topActions');
+    const bs = backupStatus();
+    /* 备份状态常驻顶栏：点一下就直接导出，不用翻到设置页 */
+    const chip = bs.level === 'none' ? '' :
+      '<button class="bk-chip' + (bs.level === 'warn' ? ' warn' : '') + '" onclick="exportJSON()"' +
+        ' title="点一下导出一份完整备份文件（企业档案 + 全部收据）">' +
+        '<span class="bdot"></span>' + esc(bs.text) + '</button>';
+    let acts = '';
+    if (view === 'ledger'){
+      acts = '<button class="btn" onclick="exportCSV()">导出 CSV</button>' +
+             '<button class="btn primary" onclick="switchView(\'new\')">开新收据</button>';
+    } else if (view === 'companies'){
+      acts = '<button class="btn primary" onclick="openCompanyEdit()">新增企业</button>';
+    } else if (view === 'new'){
+      acts = '<button class="btn" onclick="switchView(\'ledger\')">查看台账</button>';
+    }
+    box.innerHTML = acts + chip;
+  }
+
+  /* ================= 视图：开收据 ================= */
+  function paperLabel(){
+    const p = PAPERS[state.settings.paper] || PAPERS.a4x2;
+    return p.count > 1 ? '一张 A4 打二联' : 'A5 单张';
+  }
+
+  function previewCard(){
+    return '<div class="preview-wrap">' +
+      '<div class="card">' +
+        '<div class="card-h"><h2>收据预览</h2><span class="tip" id="previewPaper">—</span></div>' +
+        '<div class="card-b" style="padding:12px">' +
+          '<div class="preview-stage" id="previewStage"></div>' +
+          '<div class="zoom-note">' +
+            '<span>红虚线为纸边 5mm 安全区</span>' +
+            '<span class="zoom-bar">' +
+              '<button type="button" class="zbtn" title="缩小（Ctrl + 滚轮也行）" onclick="pvZoom(-1)">−</button>' +
+              '<span class="zpct" id="zoomTxt">100%</span>' +
+              '<button type="button" class="zbtn" title="放大（Ctrl + 滚轮也行）" onclick="pvZoom(1)">＋</button>' +
+              '<button type="button" class="zbtn wide" id="zoomFitBtn" title="按预览框宽度自动适配" onclick="pvFitClick()">适应</button>' +
+            '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function viewNew(){
+    const co = getCo(state.currentCompanyId);
+    if (!co) return '<div class="card"><div class="empty"><b>还没有企业</b>先去「企业档案」新增一家，才能开收据。</div></div>';
+    const ed = editId ? state.receipts.find(r => r.id === editId) : null;
+
+    return '' +
+    '<div class="grid-new">' +
+      '<div class="card">' +
+        '<div class="card-h"><h2>' + (ed ? '修改收据 ' + esc(ed.no) : '填写收据内容') + '</h2>' +
+          '<span class="tip">' + (ed ? '编号不可改' : '编号自动生成') + ' · ' + paperLabel() + '</span></div>' +
+        '<div class="card-b" id="recForm">' +
+          generalForm(co, ed) +
+          '<div class="form-actions">' +
+            (ed ? '<button class="btn" onclick="cancelEdit()">取消修改</button>' : '<button class="btn" onclick="resetForm()">清空重填</button>') +
+            '<button class="btn" onclick="previewPrint()">打印预览</button>' +
+            '<button class="btn primary" onclick="saveReceipt()">' + (ed ? '保存修改' : '保存并入库') + '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      previewCard() +
+    '</div>';
+  }
+
+  function companyPicker(co){
+    return '<select id="fCompany">' + state.companies.map(c =>
+      '<option value="' + c.id + '"' + (c.id === co.id ? ' selected' : '') + '>' +
+      esc(c.name) + (c.active === false ? '（停用）' : '') + '</option>').join('') + '</select>';
+  }
+
+  /* ---------- 选项选择器：可输入、可选、可新建，类似多维表格的单选 ---------- */
+  function comboHTML(kind, value, placeholder, inputClass, inputId, wrapClass){
+    return '<div class="combo' + (wrapClass ? ' ' + wrapClass : '') + '" data-kind="' + kind + '">' +
+      '<input type="text"' + (inputId ? ' id="' + inputId + '"' : '') +
+        ' class="' + (inputClass || '') + '" autocomplete="off"' +
+        ' placeholder="' + esc(placeholder) + '" value="' + esc(value || '') + '"' +
+        ' oninput="comboInput(this)" onfocus="comboOpen(this)" onblur="comboBlur(this)"' +
+        ' onkeydown="comboKey(event,this)">' +
+      '<button type="button" class="combo-btn" tabindex="-1" onmousedown="comboToggle(this,event)" title="展开选项">▾</button>' +
+    '</div>';
+  }
+
+  function comboOf(el){ return el.closest ? el.closest('.combo') : null; }
+
+  function comboRender(input){
+    const combo = comboOf(input);
+    if (!combo) return;
+    const kind = combo.dataset.kind;
+    const co = getCo(state.currentCompanyId);
+    const list = optionList(kind, co);
+    const kw = String(input.value || '').trim();
+    const low = kw.toLowerCase();
+    const cand = kw ? list.filter(x => x.name.toLowerCase().indexOf(low) >= 0) : list;
+
+    let pop = combo.querySelector('.combo-pop');
+    if (!pop){ pop = document.createElement('div'); pop.className = 'combo-pop'; combo.appendChild(pop); }
+
+    const tipText = kind === 'item' ? '项目：企业专属 + 全局库，可输入新建'
+      : kind === 'addr' ? '地址：所有企业共用，可输入新建'
+      : '人员：本企业名单（收款人 / 开据人共用），可输入新建';
+    let html = '<div class="cp-tip">' + tipText + '</div>';
+    if (!cand.length){
+      html += '<div class="cp-empty">' + (list.length ? '没有匹配项' : '还没有可选项，输入名字后点下面「新建」') + '</div>';
+    }
+    cand.slice(0, 80).forEach(x => {
+      html += '<div class="cp-item' + (x.name === kw ? ' on' : '') + '" data-name="' + esc(x.name) + '" data-scope="' + x.scope + '"' +
+        ' onmousedown="comboPick(this,event)">' +
+        '<span>' + esc(x.name) + (x.def ? '<span class="ic">　默认</span>' : '') + '</span>' +
+        '<span class="x" title="停用这个选项（历史收据不受影响）" onmousedown="comboDisable(this,event)">停用</span></div>';
+    });
+    if (kw && !list.some(x => x.name === kw)){
+      html += '<div class="cp-new" onmousedown="comboNew(this,event)">＋ 新建 <b>' + esc(kw) + '</b></div>';
+    }
+    pop.innerHTML = html;
+    pop.style.display = 'block';
+    combo.classList.add('open');
+  }
+
+  function comboOpen(input){ comboRender(input); }
+  function comboBlur(input){
+    setTimeout(() => { const c = comboOf(input); if (c && !c._hold) comboClose(input); }, 120);
+  }
+  function comboClose(input){
+    const combo = comboOf(input);
+    if (!combo) return;
+    combo.classList.remove('open');
+    const pop = combo.querySelector('.combo-pop');
+    if (pop) pop.style.display = 'none';
+  }
+  function comboInput(input){ comboRender(input); }
+  function comboToggle(btn, e){
+    if (e){ e.preventDefault(); e.stopPropagation(); }
+    const combo = comboOf(btn);
+    if (!combo) return;
+    const input = combo.querySelector('input');
+    const pop = combo.querySelector('.combo-pop');
+    if (pop && pop.style.display === 'block'){ comboClose(input); }
+    else { input.focus(); comboRender(input); }
+  }
+  function comboAfterPick(){
+    if (typeof refreshTotals === 'function') refreshTotals();
+    if (typeof normalizeDiscountRows === 'function') normalizeDiscountRows();
+    if (typeof updatePreview === 'function') updatePreview();
+  }
+  function comboPick(el, e){
+    if (e){ e.preventDefault(); e.stopPropagation(); }
+    const combo = comboOf(el);
+    if (!combo) return;
+    const input = combo.querySelector('input');
+    input.value = el.dataset.name || '';
+    comboClose(input);
+    comboAfterPick();
+  }
+  function comboNew(el, e){
+    if (e){ e.preventDefault(); e.stopPropagation(); }
+    const combo = comboOf(el);
+    if (!combo) return;
+    const input = combo.querySelector('input');
+    const name = String(input.value || '').trim();
+    if (!name) return;
+    const kind = combo.dataset.kind;
+    const co = getCo(state.currentCompanyId);
+    if (kind !== 'addr' && !co) return;
+    const added = addOption(kind, name, co, kind === 'item');
+    input.value = name;
+    comboClose(input);
+    comboAfterPick();
+    const okMsg = kind === 'item' ? '已新建项目「' + name + '」，所有企业都能用'
+      : kind === 'addr' ? '已保存常用地址「' + name + '」'
+      : '已新建人员「' + name + '」';
+    toast(added ? okMsg : '「' + name + '」已在列表里');
+  }
+  function comboDisable(el, e){
+    if (e){ e.preventDefault(); e.stopPropagation(); }
+    const row = el.closest('.cp-item');
+    const combo = comboOf(el);
+    if (!row || !combo) return;
+    const name = row.dataset.name;
+    const scope = row.dataset.scope;
+    const kind = combo.dataset.kind;
+    const co = getCo(state.currentCompanyId);
+    if (scope === 'global'){
+      const lib = kind === 'addr' ? state.addrLib : state.itemLib;
+      (lib || []).forEach(x => { if (x.name === name) x.active = false; });
+    } else if (kind === 'item'){
+      (co.items || []).forEach(x => { if (x.name === name) x.active = false; });
+    } else {
+      (co.handlers || []).forEach(x => { if (x.name === name) x.active = false; });
+    }
+    save();
+    comboRender(combo.querySelector('input'));
+    toast('已停用「' + name + '」，历史收据不受影响');
+  }
+  function comboKey(e, input){
+    if (e.key === 'Escape'){ comboClose(input); return; }
+    if (e.key === 'Enter'){
+      const combo = comboOf(input);
+      const pop = combo && combo.querySelector('.combo-pop');
+      if (!pop || pop.style.display !== 'block') return;
+      e.preventDefault();
+      const first = pop.querySelector('.cp-item') || pop.querySelector('.cp-new');
+      if (first) first.dispatchEvent(new MouseEvent('mousedown', { bubbles:true, cancelable:true }));
+    }
+  }
+
+  /* 年份下拉：缴费年度只选年 */
+  function yearSelectHTML(id, val){
+    /* 缴费年度从 2026 年起提供；至少覆盖到 2036，之后随当前年份自动往后延。 */
+    const firstYear = 2026;
+    const lastYear = Math.max(2036, new Date().getFullYear() + 10);
+    let opts = '<option value="">（不填）</option>';
+    for (let v = lastYear; v >= firstYear; v--){
+      opts += '<option value="' + v + '"' + (String(val || '') === String(v) ? ' selected' : '') + '>' + v + ' 年</option>';
+    }
+    return '<select id="' + id + '">' + opts + '</select>';
+  }
+
+  /* ---------- 统一收据表单（项目 / 数量 / 单价 / 金额） ---------- */
+  function generalForm(co, ed){
+    const no = ed ? ed.no : nextNo(co.id, todayStr());
+    const items = ed && ed.items && ed.items.length ? ed.items : [{ name:'', amt:'' }];
+    const payee = ed ? (ed.payee || ed.handler || '') : defaultPerson(co, 'payee');
+    const drawer = ed ? (ed.drawer || '') : defaultPerson(co, 'drawer');
+    const itemRows = items.map((it, i) => itemRowHTML(it, i)).join('');
+
+    return '' +
+      '<div class="row2">' +
+        '<div class="field"><label>开据企业</label>' + companyPicker(co) + '</div>' +
+        '<div class="field"><label>收款日期<i>*</i></label>' +
+          '<input type="date" id="fDate" value="' + esc(ed ? ed.date : todayStr()) + '"></div>' +
+      '</div>' +
+      '<div class="row2">' +
+        '<div class="field"><label>收据编号（自动生成，不可修改）</label>' +
+          '<input type="text" id="fNo" value="' + esc(no) + '" readonly' +
+            ' style="background:#f4f6f8;color:#5b6672;cursor:not-allowed;font-variant-numeric:tabular-nums">' +
+          (ed ? '' : '<div class="cap-hint">要换编号只能作废重开</div>') + '</div>' +
+        '<div class="field"><label>收款方式</label>' +
+          '<select id="fMethod">' + METHODS.map(m =>
+            '<option' + ((ed ? ed.method : '微信') === m ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>' +
+      '</div>' +
+      '<div class="field"><label>付款方（谁交的钱）<i>*</i></label>' +
+        '<input type="text" id="fPayer" list="payerList" placeholder="张三 / 某某公司" value="' + esc(ed ? ed.payer : '') + '">' +
+        '<datalist id="payerList">' + payerOptions() + '</datalist>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1.5fr .8fr 1fr;gap:12px">' +
+        '<div class="field"><label>地址（小区 / 路段）</label>' +
+          comboHTML('addr', ed ? (ed.addr || '') : '', '如：公路花苑小区', '', 'fAddr', 'combo-field') + '</div>' +
+        '<div class="field"><label>房号</label>' +
+          '<input type="text" id="fRoom" value="' + esc(ed ? (ed.room || '') : '') + '" placeholder="3-2-501"></div>' +
+        '<div class="field"><label>联系电话</label>' +
+          '<input type="text" id="fPhone" value="' + esc(ed ? (ed.phone || '') : '') + '"></div>' +
+      '</div>' +
+      '<div class="field"><label>缴费年度（起止年份）</label>' +
+        '<div class="period-inline">' +
+          yearSelectHTML('fPeriodFrom', ed ? (ed.periodFrom || '') : '') +
+          '<span class="period-sep">至</span>' +
+          yearSelectHTML('fPeriodTo', ed ? (ed.periodTo || '') : '') +
+        '</div>' +
+        '<div class="cap-hint">采暖季选 2026 至 2027，收据印「2026-2027 年度」；只填一年印「2026 年度」；不填留空手写。</div>' +
+      '</div>' +
+      '<div class="field">' +
+        '<label>收款事由与金额<i>*</i></label>' +
+        '<div class="items">' +
+          '<div class="items-head"><span>#</span><span>项目（事由）</span>' +
+            '<span style="text-align:right">数量</span><span style="text-align:right">单价</span>' +
+            '<span style="text-align:right">金额</span><span></span></div>' +
+          '<div id="itemsBody">' + itemRows + '</div>' +
+          '<div class="items-foot">' +
+            '<button class="add" onclick="addItem()">＋ 再加一行明细</button>' +
+            '<span class="total">合计 <b id="totalTxt">¥0.00</b></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="cap-hint" id="capHint">大写：零元整</div>' +
+        '<div class="cap-hint">点项目格右侧 ▾ 选已有项目，或直接输入名字后点「新建」，之后所有企业都能复用。数量 × 单价会自动算出金额。</div>' +
+        '<div class="cap-hint">选<b>优惠 / 折扣 / 减免</b>这类项目，金额自动记负数（减项），合计里直接扣掉。</div>' +
+      '</div>' +
+      '<div class="row2">' +
+        '<div class="field"><label>收款人（收钱的）</label>' +
+          comboHTML('handler', payee, '选择或输入姓名', '', 'fPayee', 'combo-field') +
+          '<div class="cap-hint">企业名单里的默认收款人自动带入</div></div>' +
+        '<div class="field"><label>开据人（开票的）</label>' +
+          comboHTML('handler', drawer, '选择或输入姓名', '', 'fDrawer', 'combo-field') +
+          '<div class="cap-hint">企业名单里的默认开据人自动带入</div></div>' +
+      '</div>' +
+      '<div class="field"><label>备注</label>' +
+        '<input type="text" id="fNote" value="' + esc(ed ? ed.note : '') + '" placeholder="如：含押金 2000"></div>';
+  }
+
+  function payerOptions(){
+    const set = {};
+    state.receipts.forEach(r => { if (r.payer) set[r.payer] = 1; });
+    return Object.keys(set).slice(-200).map(p => '<option value="' + esc(p) + '">').join('');
+  }
+
+  function itemRowHTML(it, i){
+    it = it || {};
+    const qty = (it.qty === '' || it.qty == null) ? '' : num(it.qty);
+    const price = (it.price === '' || it.price == null) ? '' : num(it.price);
+    const amt = (it.amt === '' || it.amt == null) ? '' : moneyPlain(it.amt);
+    /* 金额与「数量×单价」对不上时，视为手填，不再自动覆盖 */
+    const computed = num(qty) * num(price);
+    let auto = '1';
+    if (it.amtAuto === false) auto = '0';
+    else if (amt !== '' && computed && Math.abs(num(it.amt) - computed) > 0.004) auto = '0';
+    const disc = isDiscName(it.name);
+    return '<div class="item-row' + (disc ? ' disc' : '') + '" data-i="' + i + '">' +
+      '<span class="idx">' + (i + 1) + '</span>' +
+      comboHTML('item', it.name || '', '项目名，可新建', 'nm') +
+      '<input type="number" class="qty" step="0.01" placeholder="数量" value="' + (qty === '' ? '' : qty) + '">' +
+      '<input type="number" class="price" step="0.01" placeholder="单价" value="' + (price === '' ? '' : price) + '">' +
+      '<input type="number" class="amt' + (disc ? ' neg' : '') + '" data-auto="' + auto + '" step="0.01" placeholder="0.00" value="' + amt + '">' +
+      '<button class="del" type="button" title="删除本行" onclick="delItem(this)">&times;</button>' +
+    '</div>';
+  }
+
+  function readItemsRaw(){
+    return $$('#itemsBody .item-row').map(row => ({
+      name: row.querySelector('.nm').value,
+      qty: row.querySelector('.qty').value,
+      price: row.querySelector('.price').value,
+      amt: row.querySelector('.amt').value,
+      amtAuto: row.querySelector('.amt').dataset.auto !== '0'
+    }));
+  }
+
+  function collectItems(){
+    return readItemsRaw().map(it => ({
+      name: it.name.trim(),
+      qty: num(it.qty),
+      price: num(it.price),
+      /* 优惠 / 折扣类项目一律记负数，不管框里填的是正是负 */
+      amt: isDiscName(it.name) ? -Math.abs(num(it.amt)) : num(it.amt)
+    })).filter(it => it.name || it.amt !== 0);
+  }
+
+  /* 减项项目：优惠、折扣、减免这类，金额写死为负 */
+  function isDiscName(name){
+    return /优惠|折扣|减免|让利|返现|抵扣/.test(String(name || ''));
+  }
+
+  /* 把减项行的金额框同步成负数（只在失焦 / 选完项目 / 重算时做，避免打字时跳光标） */
+  function normalizeDiscountRows(){
+    $$('#itemsBody .item-row').forEach(row => {
+      const nm = row.querySelector('.nm');
+      const amtEl = row.querySelector('.amt');
+      if (!nm || !amtEl) return;
+      const disc = isDiscName(nm.value);
+      row.classList.toggle('disc', disc);
+      amtEl.classList.toggle('neg', disc);
+      if (disc && amtEl.value.trim() !== '' && num(amtEl.value) > 0){
+        amtEl.value = (-Math.abs(num(amtEl.value))).toFixed(2);
+      }
+    });
+  }
+
+  /* 合计 = 各行金额相加 */
+  function itemsTotal(items){
+    return (items || []).reduce((s, it) => s + num(it.amt), 0);
+  }
+
+  function formData(){
+    const coId = $('#fCompany') ? $('#fCompany').value : state.currentCompanyId;
+    const items = collectItems();
+    return {
+      id: editId || 'preview',
+      companyId: coId,
+      date: ($('#fDate') || {}).value || todayStr(),
+      no: ($('#fNo') || {}).value || '',
+      payer: ($('#fPayer') || {}).value || '',
+      addr: ($('#fAddr') || {}).value || '',
+      room: ($('#fRoom') || {}).value || '',
+      phone: ($('#fPhone') || {}).value || '',
+      periodFrom: ($('#fPeriodFrom') || {}).value || '',
+      periodTo: ($('#fPeriodTo') || {}).value || '',
+      items: items,
+      amount: itemsTotal(items),
+      method: ($('#fMethod') || {}).value || '微信',
+      payee: ($('#fPayee') || {}).value || '',
+      drawer: ($('#fDrawer') || {}).value || '',
+      note: ($('#fNote') || {}).value || '',
+      status: 'valid'
+    };
+  }
+
+  function afterRender(){
+    if (view !== 'new') return;
+    const form = $('#recForm');
+    if (form){
+      form.addEventListener('input', function(e){
+        const t = e.target;
+        if (t.classList.contains('amt')){
+          t.dataset.auto = t.value.trim() === '' ? '1' : '0';
+        }
+        refreshTotals();
+        updatePreview();
+      });
+      form.addEventListener('change', function(e){
+        if (e.target.id === 'fCompany'){ onCompanyChange(); return; }
+        if (e.target.id === 'fDate'){ onDateChange(); return; }
+        if (e.target.classList.contains('amt')) normalizeDiscountRows();
+        refreshTotals();
+        updatePreview();
+      });
+    }
+    refreshTotals();
+    updatePreview();
+  }
+
+  function onCompanyChange(){
+    const fc = $('#fCompany');
+    if (!fc) return;
+    const prevCo = getCo(state.currentCompanyId);
+    const prevPayee = defaultPerson(prevCo, 'payee');
+    const prevDrawer = defaultPerson(prevCo, 'drawer');
+    state.currentCompanyId = fc.value;
+    save();
+    renderCompanySelect();
+    /* 换企业不重建表单，已填的明细不会丢 */
+    if (!editId && $('#fNo')){
+      const d = $('#fDate');
+      $('#fNo').value = nextNo(fc.value, d ? d.value : todayStr());
+    }
+    /* 收款人 / 开据人：原来空着、或还是上一家的默认人，就换成新企业的默认人 */
+    const co = getCo(fc.value);
+    [['fPayee', prevPayee, 'payee'], ['fDrawer', prevDrawer, 'drawer']].forEach(p => {
+      const el = $('#' + p[0]);
+      if (el && !editId){
+        const cur = String(el.value || '').trim();
+        if (!cur || cur === p[1]) el.value = defaultPerson(co, p[2]);
+      }
+    });
+    updatePreview();
+    toast('已切换到 ' + ((co && (co.short || co.name)) || ''));
+  }
+
+  function onDateChange(){
+    const fd = $('#fDate'), fc = $('#fCompany');
+    if (fd && fc && !editId) $('#fNo').value = nextNo(fc.value, fd.value);
+    updatePreview();
+  }
+
+  function refreshTotals(){
+    /* 数量 × 单价 → 自动填金额；手改过金额的不再覆盖。减项行（优惠等）金额取负 */
+    $$('#itemsBody .item-row').forEach(row => {
+      const amtEl = row.querySelector('.amt');
+      if (!amtEl) return;
+      const nmEl = row.querySelector('.nm');
+      const disc = isDiscName(nmEl && nmEl.value);
+      row.classList.toggle('disc', disc);
+      amtEl.classList.toggle('neg', disc);
+      const qty = row.querySelector('.qty'), pri = row.querySelector('.price');
+      if (amtEl.dataset.auto !== '0' && ((qty && qty.value) || (pri && pri.value))){
+        const v = num(qty && qty.value) * num(pri && pri.value);
+        if (v) amtEl.value = (disc ? -Math.abs(v) : v).toFixed(2);
+      }
+    });
+    const total = itemsTotal(collectItems());
+    const tt = $('#totalTxt'); if (tt) tt.textContent = money(total);
+    const ch = $('#capHint'); if (ch) ch.textContent = '大写：' + rmbUpper(total);
+  }
+
+  function addItem(){
+    const items = readItemsRaw();
+    if (items.length >= MAX_ITEM_ROWS){
+      toast('一张收据最多填写 ' + MAX_ITEM_ROWS + ' 行项目，请合并项目或另开一张收据', true);
+      return;
+    }
+    items.push({ name:'', amt:'' });
+    renderItems(items);
+    const rows = $$('#itemsBody .item-row');
+    const last = rows[rows.length - 1];
+    if (last) last.querySelector('.nm').focus();
+  }
+  function delItem(btn){
+    const row = btn.closest('.item-row');
+    const items = readItemsRaw();
+    const i = $$('#itemsBody .item-row').indexOf(row);
+    if (items.length <= 1){ items[0] = { name:'', amt:'' }; }
+    else { items.splice(i, 1); }
+    renderItems(items.length ? items : [{ name:'', amt:'' }]);
+  }
+  function renderItems(items){
+    $('#itemsBody').innerHTML = items.map((it, i) => itemRowHTML(it, i)).join('');
+    refreshTotals(); updatePreview();
+  }
+
+  function resetForm(){
+    if (!confirm('清空当前填写的内容？')) return;
+    render();
+    toast('已清空');
+  }
+  function cancelEdit(){
+    editId = null;
+    render();
+  }
+
+  function updatePreview(){
+    const stage = $('#previewStage');
+    if (!stage) return;
+    const d = formData();
+    const s = state.settings;
+    const paper = PAPERS[s.paper] || PAPERS.a4x2;
+    $('#previewPaper').textContent = paper.name;
+    stage.innerHTML = '<div id="previewZoom">' + sheetHTML(d, paper) +
+      '<div class="safe-guide" title="红色虚线内为打印机安全打印区（距纸边 5mm）"></div></div>';
+    const pz = $('#previewZoom');
+    pz.style.position = 'relative';
+    pz.style.width = paper.w + 'mm';
+    pz.style.height = paper.h + 'mm';
+    pvApply();
+  }
+
+  /* ================= 预览缩放（可手动放大缩小，记住本次选择） ================= */
+  let pvScale = null;              // null = 自动适应预览框；数字 = 用户手动缩放
+  const PV_MIN = 0.3, PV_MAX = 2.5;
+
+  function pvFitScale(paper){
+    const stage = $('#previewStage');
+    const cw = stage ? stage.clientWidth : 0;
+    const avail = (cw > 120 ? cw : 468) - 32;   // 减掉 stage 内边距；取不到宽度时按默认列宽算
+    const auto = Math.min(0.78, avail / (paper.w * 3.7795));
+    return Math.max(PV_MIN, Math.round(auto * 100) / 100);
+  }
+
+  function pvApply(){
+    const pz = $('#previewZoom');
+    if (!pz) return;
+    const paper = PAPERS[state.settings.paper] || PAPERS.a4x2;
+    const fit = pvFitScale(paper);
+    let s = (pvScale == null) ? fit : Math.min(PV_MAX, Math.max(PV_MIN, pvScale));
+    pz.style.zoom = s.toFixed(3);
+    pz.style.transformOrigin = 'top center';
+    const t = $('#zoomTxt');
+    if (t) t.textContent = Math.round(s * 100) + '%';
+    const b = $('#zoomFitBtn');
+    if (b) b.classList.toggle('on', pvScale == null);
+  }
+
+  function pvZoom(step){
+    const paper = PAPERS[state.settings.paper] || PAPERS.a4x2;
+    const cur = (pvScale == null) ? pvFitScale(paper) : pvScale;
+    pvScale = Math.min(PV_MAX, Math.max(PV_MIN, Math.round((cur + step * 0.1) * 100) / 100));
+    pvApply();
+  }
+
+  function pvFitClick(){ pvScale = null; pvApply(); }
+
+  /* Ctrl + 滚轮直接缩放预览 */
+  function pvWheel(e){
+    if (!e.ctrlKey) return;
+    const pz = $('#previewZoom');
+    if (!pz || !pz.contains(e.target)) return;
+    e.preventDefault();
+    pvZoom(e.deltaY > 0 ? -1 : 1);
+  }
+
+  /* 缴费年度：按年。两个年份拼「2026-2027 年度」，同年或只填一个印「2026 年度」 */
+  function periodText(r){
+    const f = String((r && r.periodFrom) || '').trim();
+    const t = String((r && r.periodTo) || '').trim();
+    if (!f && !t) return '';
+    if (f && t && f !== t) return f + '-' + t + ' 年度';
+    return (f || t) + ' 年度';
+  }
+
+  /* ================= 收据渲染（单联 A5 版式，二联并排拼在一张 A4 上） ================= */
+  function slipHTML(r, paper, copyIndex, copyTotal){
+    const co = getCo(r.companyId) || { name:'（未选择企业）', addr:'', tel:'' };
+    const slipW = (paper && paper.slipW) || (paper && paper.w) || 210;
+    const slipHmm = (paper && paper.slipH) || (paper && paper.h) || 148.5;
+    const copyTag = (copyTotal > 1)
+      ? '<span class="rc-copy">' + (copyIndex === 0 ? '第一联　存根' : '第二联　客户') + '</span>' : '';
+    const items = (r.items && r.items.length ? r.items : [{ name:r.purpose || '', amt:r.amount || 0 }])
+      .filter(it => it.name || num(it.amt) !== 0);
+    const total = items.length ? itemsTotal(items) : num(r.amount);
+    const withQty = items.some(it => num(it.qty) || num(it.price));
+    const cols = withQty ? 5 : 3;
+
+    const coLine = [co.addr, co.tel].filter(Boolean).join('　');
+
+    /* 明细不足就补空行：版面高度固定，一张两行、一张六行看起来一样挺 */
+    const MIN_ROWS = MAX_ITEM_ROWS;
+    const cell = (n) => '<td class="c">' + (n || '') + '</td>';
+    let body = items.map((it, i) =>
+      '<tr>' +
+        cell(i + 1) +
+        '<td>' + esc(it.name || '—') + '</td>' +
+        (withQty
+          ? '<td class="n">' + (num(it.qty) ? num(it.qty) : '') + '</td>' +
+            '<td class="n">' + (num(it.price) ? moneyPlain(it.price) : '') + '</td>'
+          : '') +
+        '<td class="n' + (num(it.amt) < 0 ? ' minus' : '') + '">' + moneyPlain(it.amt) + '</td>' +
+      '</tr>').join('');
+    for (let i = items.length; i < MIN_ROWS; i++){
+      body += withQty
+        ? '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>'
+        : '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>';
+    }
+    const sumRow = items.length > 1
+      ? '<tr class="sum"><td colspan="' + (cols - 1) + '" style="text-align:right">合　计</td>' +
+        '<td class="n">' + moneyPlain(total) + '</td></tr>'
+      : '';
+
+    const colgroup = withQty
+      ? '<colgroup><col style="width:9mm"><col><col style="width:20mm"><col style="width:23mm"><col style="width:27mm"></colgroup>'
+      : '<colgroup><col style="width:9mm"><col><col style="width:30mm"></colgroup>';
+    const head = '<tr><th class="c" style="width:9mm">#</th><th>项　目</th>' +
+      (withQty ? '<th class="n" style="text-align:right">数量</th><th class="n" style="text-align:right">单价</th>' : '') +
+      '<th class="n" style="text-align:right">金额（元）</th></tr>';
+
+    const v = (x) => esc(x || '');
+    const line = (k, val, cls) => '<span class="k">' + k + '</span><span class="v' + (cls ? ' ' + cls : '') + '">' + v(val) + '</span>';
+    return '<div class="rc' + (r.status === 'void' ? ' voided' : '') +
+        (items.length > 13 ? ' dense xdense xtd' : (items.length > 9 ? ' dense xdense' : (items.length > MIN_ROWS ? ' dense' : ''))) +
+        '" style="width:' + slipW + 'mm;height:' + slipHmm + 'mm;flex:0 0 ' + slipHmm + 'mm">' +
+      '<div class="rc-top">' +
+        '<div class="rc-co">' + esc(co.name || '') +
+          (coLine ? '<small>' + esc(coLine) + '</small>' : '') + '</div>' +
+        '<div class="rc-title" title="' + esc(co.name || '') + '">' + esc(co.name || '收据') + '</div>' +
+        '<div class="rc-right">' +
+          '<div class="rc-no">No. ' + esc(r.no || '') + '</div>' +
+          '<div class="rc-sub"><span>' + esc(r.date || '') + '</span>' + copyTag + '</div>' +
+          (r.status === 'void' ? '<div class="rc-voidtag">已作废</div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="rc-row">' +
+        line('付款方：', r.payer) +
+        line('收款方式：', r.method, 'fixed-24') +
+        line('日期：', r.date, 'fixed-30') +
+      '</div>' +
+      '<div class="rc-row">' +
+        line('地　址：', r.addr) +
+        line('房号：', r.room, 'fixed-24') +
+        line('电话：', r.phone, 'fixed-30') +
+      '</div>' +
+      '<div class="rc-row">' +
+        line('缴费年度：', periodText(r)) +
+      '</div>' +
+      '<table class="rc-tbl">' + colgroup + '<thead>' + head + '</thead><tbody>' + body + sumRow + '</tbody></table>' +
+      '<div class="rc-total">' +
+        '<span class="rc-cn">合计人民币（大写）：<b>' + rmbUpper(total) + '</b></span>' +
+        '<span class="rc-num">¥' + moneyPlain(total) + '</span>' +
+      '</div>' +
+      '<div class="rc-memo"><span class="k">备注</span><span class="t">' + esc(r.note || '') + '</span></div>' +
+      '<div class="rc-sign">' +
+        '<span class="cell">收款单位（盖章）：<span class="seal-space"></span></span>' +
+        '<span class="grow"></span>' +
+        '<span class="cell">收款人：' + esc(r.payee || r.handler || '') + '</span>' +
+        '<span class="cell">开据人：' + esc(r.drawer || '') + '</span>' +
+        '<span class="cell">日期：' + esc(r.date || '') + '</span>' +
+      '</div>' +
+      (state.settings.showFootNote
+        ? '<div class="rc-foot"><span>本收据为内部收款凭证，不作发票使用</span><span>' + esc(r.no || '') + '</span></div>'
+        : '') +
+    '</div>';
+  }
+
+  function sheetHTML(r, paper, extraStyle){
+    const overlay = state.settings.overlay;
+    const n = paper.count || 1;
+    let inner = '';
+    for (let i = 0; i < n; i++) inner += slipHTML(r, paper, i, n);
+    /* 二联：在横切线两端各打一小段标记，方便裁开、不压内容 */
+    const cut = n > 1 ? '<span class="cut-mark hleft"></span><span class="cut-mark hright"></span>' : '';
+    return '<div class="sheet' + (overlay ? ' overlay' : '') + (n > 1 ? ' rows' : '') +
+      '" style="width:' + paper.w + 'mm;height:' + paper.h + 'mm;' +
+      (state.settings.showFrame && !overlay ? 'border:1px solid #d5d5d5;' : '') + (extraStyle || '') + '">' +
+      inner + cut + '</div>';
+  }
+
+  /* ================= 保存 ================= */
+  function saveReceipt(){
+    const d = formData();
+    if (!String(d.payer).trim()){
+      toast('请填写付款方', true);
+      if ($('#fPayer')) $('#fPayer').focus();
+      return;
+    }
+    if (!d.items.length){ toast('请填写收款事由和金额', true); return; }
+    if (d.items.length > MAX_ITEM_ROWS){ toast('一张收据最多填写 ' + MAX_ITEM_ROWS + ' 行项目，请拆分后再保存', true); return; }
+    if (!d.amount || d.amount <= 0){ toast('合计金额需大于 0，请检查明细金额', true); return; }
+    if (!d.date){ toast('请选择日期', true); return; }
+    if (!d.companyId){ toast('请选择开据企业', true); return; }
+
+    const payload = {
+      companyId: d.companyId, date: d.date, payer: d.payer.trim(),
+      addr: d.addr || '', room: d.room || '', phone: d.phone || '',
+      periodFrom: d.periodFrom || '', periodTo: d.periodTo || '',
+      items: d.items, method: d.method, payee: d.payee || '', drawer: d.drawer || '', note: d.note,
+      amount: Math.round(d.amount * 100) / 100,
+      updatedAt: new Date().toISOString()
+    };
+
+    /* 本次填的地址顺手收进常用地址库，下次点一下就出来 */
+    const addrNow = String(payload.addr || '').trim();
+    if (addrNow){
+      state.addrLib = Array.isArray(state.addrLib) ? state.addrLib : [];
+      const hit = state.addrLib.find(x => x.name === addrNow);
+      if (hit) hit.active = true;
+      else state.addrLib.push({ name:addrNow, active:true });
+    }
+
+    if (editId){
+      const r = state.receipts.find(x => x.id === editId);
+      if (r){
+        Object.assign(r, payload);
+        delete r.lines; delete r.template; delete r.code; delete r.billDate;
+      }
+      save(); toast('修改已保存');
+      editId = null;
+      switchView('ledger');
+      return;
+    }
+
+    /* 编号不接受表单值，一律按「企业开头 + 年月日 + 当日流水」现算，保证不重号、不可改 */
+    const no = nextNo(d.companyId, d.date);
+    const dup = state.receipts.find(r => r.no === no && r.companyId === d.companyId);
+    if (dup){ toast('编号 ' + no + ' 已存在，请重试', true); return; }
+
+    state.receipts.unshift(Object.assign({
+      id: uid(), no: no, status: 'valid', createdAt: new Date().toISOString()
+    }, payload));
+    save();
+    toast('已保存：' + no + '　' + money(payload.amount));
+    render();
+  }
+
+  /* ================= 视图：台账 ================= */
+  function filteredReceipts(){
+    return state.receipts.filter(r => {
+      if (ledgerFilter.companyId && r.companyId !== ledgerFilter.companyId) return false;
+      if (ledgerFilter.from && r.date < ledgerFilter.from) return false;
+      if (ledgerFilter.to && r.date > ledgerFilter.to) return false;
+      if (ledgerFilter.status && r.status !== ledgerFilter.status) return false;
+      if (ledgerFilter.kw){
+        const k = ledgerFilter.kw.toLowerCase();
+        const hay = [r.no, r.payer, r.payee, r.drawer, r.handler, r.method, r.addr, r.room, r.phone,
+          periodText(r), r.periodFrom, r.periodTo,
+          (r.items || []).map(i => i.name).join(' '), r.note]
+          .join(' ').toLowerCase();
+        if (hay.indexOf(k) < 0) return false;
+      }
+      return true;
+    }).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (a.no < b.no ? 1 : -1)));
+  }
+
+  function viewLedger(){
+    const list = filteredReceipts();
+    const valid = list.filter(r => r.status !== 'void');
+    const total = valid.reduce((s, r) => s + num(r.amount), 0);
+
+    const coOpts = '<option value="">全部企业</option>' + state.companies.map(c =>
+      '<option value="' + c.id + '"' + (ledgerFilter.companyId === c.id ? ' selected' : '') + '>' + esc(c.short || c.name) + '</option>').join('');
+
+    const rows = list.length ? list.map(r => {
+      const co = getCo(r.companyId);
+      const purpose = (r.items || []).map(i => i.name).filter(Boolean).join('；');
+      return '<tr class="row-click" onclick="previewReceipt(\'' + r.id + '\')" title="点击预览这张收据">' +
+        '<td class="mono">' + esc(r.date) + '</td>' +
+        '<td class="mono">' + esc(r.no) + '</td>' +
+        '<td>' + esc(co ? (co.short || co.name) : '—') + '</td>' +
+        '<td>' + esc(r.payer) + '</td>' +
+        '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(purpose + (periodText(r) ? '\n缴费年度：' + periodText(r) : '')) + '">' + esc(purpose || '—') + '</td>' +
+        '<td class="num">' + (r.status === 'void' ? '<s style="color:#b0b7bf">' + money(r.amount) + '</s>' : money(r.amount)) + '</td>' +
+        '<td>' + esc(r.method) + '</td>' +
+        '<td title="开据人：' + esc(r.drawer || '未填') + '">' + esc(r.payee || r.handler || '—') + '</td>' +
+        '<td>' + (r.status === 'void' ? '<span class="badge void">已作废</span>' : '<span class="badge ok">有效</span>') + '</td>' +
+        '<td class="rowacts" onclick="event.stopPropagation()">' +
+          '<button class="btn sm" onclick="previewReceipt(\'' + r.id + '\')">预览</button>' +
+          '<button class="btn sm" onclick="printOne(\'' + r.id + '\')">打印</button>' +
+          (r.status === 'void'
+            ? '<button class="btn sm" onclick="restoreReceipt(\'' + r.id + '\')">恢复</button>'
+            : '<button class="btn sm" onclick="editReceipt(\'' + r.id + '\')">改</button>' +
+              '<button class="btn sm danger" onclick="voidReceipt(\'' + r.id + '\')">作废</button>') +
+        '</td>' +
+      '</tr>';
+    }).join('') : '<tr><td colspan="10"><div class="empty"><b>还没有符合条件的收据</b>换个筛选条件，或先去开一张。</div></td></tr>';
+
+    return '' +
+      '<div class="filters">' +
+        '<div class="f"><label>企业</label><select id="fltCo" onchange="setFilter(\'companyId\',this.value)">' + coOpts + '</select></div>' +
+        '<div class="f"><label>起始日</label><input type="date" value="' + esc(ledgerFilter.from) + '" onchange="setFilter(\'from\',this.value)"></div>' +
+        '<div class="f"><label>截止日</label><input type="date" value="' + esc(ledgerFilter.to) + '" onchange="setFilter(\'to\',this.value)"></div>' +
+        '<div class="f"><label>状态</label><select onchange="setFilter(\'status\',this.value)">' +
+          '<option value="">全部</option>' +
+          '<option value="valid"' + (ledgerFilter.status === 'valid' ? ' selected' : '') + '>有效</option>' +
+          '<option value="void"' + (ledgerFilter.status === 'void' ? ' selected' : '') + '>已作废</option>' +
+        '</select></div>' +
+        '<div class="f" style="flex:1;min-width:180px"><label>搜索（编号 / 付款方 / 事由）</label>' +
+          '<input type="text" value="' + esc(ledgerFilter.kw) + '" placeholder="输入关键词" oninput="setFilter(\'kw\',this.value)"></div>' +
+        '<button class="btn" onclick="clearFilter()">重置</button>' +
+      '</div>' +
+
+      '<div class="sum-bar">' +
+        '<div><span>笔数</span><b>' + valid.length + '</b></div>' +
+        '<div><span>有效金额合计</span><b>' + money(total) + '</b></div>' +
+        '<div><span>已作废</span><b>' + list.filter(r => r.status === 'void').length + '</b></div>' +
+        '<div><span>大写</span><b style="font-size:13px">' + rmbUpper(total) + '</b></div>' +
+      '</div>' +
+
+      '<div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+        '<th>日期</th><th>编号</th><th>企业</th><th>付款方</th><th>事由</th><th style="text-align:right">金额</th>' +
+        '<th>方式</th><th>收款人</th><th>状态</th><th>操作</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<div class="cap-hint" style="margin-top:10px">本表共 ' + list.length + ' 笔，<b>点任意一行可以直接预览这张收据</b>。合计 = 有效收据金额相加，已作废不计入。</div>';
+  }
+
+  function setFilter(k, v){ ledgerFilter[k] = v; render(); }
+  function clearFilter(){ ledgerFilter = { companyId:'', from:'', to:'', kw:'', status:'' }; render(); }
+
+  function editReceipt(id){
+    editId = id;
+    const r = state.receipts.find(x => x.id === id);
+    if (r) state.currentCompanyId = r.companyId;
+    switchViewKeepEdit('new');
+  }
+  function switchViewKeepEdit(v){
+    view = v;
+    $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+    $('#pageTitle').textContent = TITLES[v][0];
+    $('#pageSub').textContent = TITLES[v][1];
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function voidReceipt(id){
+    const r = state.receipts.find(x => x.id === id);
+    if (!r) return;
+    openModal('作废收据 ' + r.no,
+      '<div class="note-box" style="margin-bottom:14px">作废后该笔不再计入合计，但记录和编号会保留，可随时恢复。这是为了账面可追溯，不会真的删除。</div>' +
+      '<div class="field"><label>作废原因（建议填写）</label>' +
+        '<input type="text" id="voidReason" placeholder="例如：金额写错 / 客户退回 / 重复开据"></div>',
+      '<button class="btn" onclick="closeModal()">取消</button>' +
+      '<button class="btn danger" onclick="doVoid(\'' + id + '\')">确认作废</button>');
+  }
+  function doVoid(id){
+    const r = state.receipts.find(x => x.id === id);
+    if (!r) return;
+    const el = $('#voidReason');
+    r.status = 'void';
+    r.voidReason = el ? el.value.trim() : '';
+    r.voidAt = new Date().toISOString();
+    save(); closeModal(); render();
+    toast('已作废：' + r.no);
+  }
+  function restoreReceipt(id){
+    const r = state.receipts.find(x => x.id === id);
+    if (!r) return;
+    r.status = 'valid'; delete r.voidReason; delete r.voidAt;
+    save(); render(); toast('已恢复：' + r.no);
+  }
+
+  /* ================= 打印 ================= */
+  function printOne(id){
+    const r = state.receipts.find(x => x.id === id);
+    if (!r) return;
+    doPrint([r], false);
+  }
+
+  /* 台账/统计里点一张：弹层预览这张收据（两联，按弹层宽度自动缩放） */
+  function previewReceipt(id){
+    const r = state.receipts.find(x => x.id === id);
+    if (!r) return;
+    const paper = PAPERS[state.settings.paper] || PAPERS.a4x2;
+    const co = getCo(r.companyId);
+    const bits = [
+      co ? (co.short || co.name) : '（企业已删除）',
+      r.payer || '',
+      money(num(r.amount)),
+      periodText(r) ? '缴费年度 ' + periodText(r) : '',
+      r.status === 'void' ? '已作废' : '有效'
+    ].filter(Boolean).join('　·　');
+    openModal('收据预览　' + (r.no || ''),
+      '<div class="rc-view"><div class="rc-view-stage" id="rcViewStage">' + sheetHTML(r, paper) + '</div></div>' +
+      '<div class="cap-hint" style="margin-top:10px">' + esc(bits) +
+        '　｜　' + paper.w + '×' + paper.h + 'mm' + (paper.count > 1 ? '，上下两联，沿线裁开' : '') +
+        '　｜　打印成 PDF 会自动命名为 <b>' + esc(printNameOf([r])) + '</b></div>',
+      '<button class="btn" onclick="closeModal()">关闭</button>' +
+      (r.status === 'void'
+        ? '<button class="btn" onclick="closeModal();restoreReceipt(\'' + r.id + '\')">恢复这张</button>'
+        : '<button class="btn" onclick="closeModal();editReceipt(\'' + r.id + '\')">修改</button>') +
+      '<button class="btn primary" onclick="printOne(\'' + r.id + '\')">打印这张</button>',
+      'wide');
+    /* 弹层刚插入时还量不到宽度，下一帧再缩放 */
+    requestAnimationFrame(() => {
+      const stage = $('#rcViewStage');
+      const wrap = stage && stage.parentNode;
+      if (!stage || !wrap) return;
+      const avail = Math.max(240, wrap.clientWidth - 26);
+      const s = Math.min(1, avail / (paper.w * 3.7795));
+      stage.style.zoom = Math.max(0.2, s).toFixed(3);
+    });
+  }
+
+  function previewPrint(){
+    const d = formData();
+    if (!d.payer && !collectItems().length){ toast('先填写内容再打印预览', true); return; }
+    doPrint([d], true);
+  }
+
+  function printSetup(){
+    const s = state.settings;
+    const paper = PAPERS[s.paper] || PAPERS.a4x2;
+    const size = { w: paper.w, h: paper.h };
+    const tx = num(s.offsetX), ty = num(s.offsetY);
+    const sc = (num(s.scale) || 100) / 100;
+    const tf = (tx || ty || sc !== 1)
+      ? 'transform:translate(' + tx + 'mm,' + ty + 'mm) scale(' + sc + ');transform-origin:top left;'
+      : '';
+    $('#pageStyle').textContent = '@page{size:' + size.w + 'mm ' + size.h + 'mm;margin:0}';
+    document.body.classList.toggle('no-color', !s.printColor);
+    return { paper: paper, size: size, tf: tf };
+  }
+
+  function doPrint(list, isDraft){
+    const cfg = printSetup();
+    const html = list.map(r => sheetHTML(r, cfg.paper, cfg.tf)).join('');
+    $('#printArea').innerHTML = html;
+    printWithName(printNameOf(list), () => {
+      if (isDraft) toast('正在调起打印：打印成 PDF 会自动命名为「' + printNameOf(list) + '」');
+      window.print();
+    });
+  }
+
+  /* 打印文件名：浏览器「另存为 PDF」默认用 document.title 当文件名，所以打印前临时改名，打完还原 */
+  function printNameOf(list){
+    const clean = t => String(t || '').replace(/[\\/:*?"<>|\r\n\t]/g, '').replace(/\s+/g, '').trim();
+    if (!list || !list.length) return '收据_' + todayStr();
+    if (list.length === 1){
+      const r = list[0];
+      const co = getCo(r.companyId);
+      const coName = clean(co ? (co.short || co.name) : '') || '收据';
+      const no = clean(r.no || '');
+      return no ? coName + '_' + no : coName + '_' + clean(r.date || todayStr());
+    }
+    /* 一次打多张：同企业就「企业_日期_共N张」，跨企业就叫「收据_…」 */
+    const ids = {};
+    list.forEach(r => { ids[r.companyId] = 1; });
+    const co = Object.keys(ids).length === 1 ? getCo(list[0].companyId) : null;
+    return (co ? clean(co.short || co.name) : '收据') + '_' + todayStr() + '_共' + list.length + '张';
+  }
+
+  function printWithName(name, fn){
+    const old = document.title;
+    document.title = name;
+    let done = false;
+    const restore = () => {
+      if (done) return;
+      done = true;
+      document.title = old;
+      window.removeEventListener('afterprint', restore);
+    };
+    window.addEventListener('afterprint', restore);
+    /* 必须在按钮点击的同一调用栈内打印；延时会被内嵌浏览器当作弹窗拦截。 */
+    fn();
+    /* 某些浏览器不触发 afterprint，兜底恢复网页标题。 */
+    setTimeout(restore, 1000);
+  }
+
+  /* 套打校准页：打一张带毫米网格的纸，量出偏差后填进偏移设置 */
+  function printCalibration(){
+    const cfg = printSetup();
+    const w = cfg.size.w, h = cfg.size.h;
+    let lines = '';
+    for (let x = 10; x < w - 0.5; x += 10){
+      const bold = x % 50 === 0;
+      lines += '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + h + '" stroke="' + (bold ? '#c0392b' : '#c8c8c8') +
+        '" stroke-width="' + (bold ? 0.3 : 0.12) + '"/>';
+    }
+    for (let y = 10; y < h - 0.5; y += 10){
+      const bold = y % 50 === 0;
+      lines += '<line x1="0" y1="' + y + '" x2="' + w + '" y2="' + y + '" stroke="' + (bold ? '#c0392b' : '#c8c8c8') +
+        '" stroke-width="' + (bold ? 0.3 : 0.12) + '"/>';
+    }
+    const cross = (cx, cy) =>
+      '<line x1="' + (cx - 4) + '" y1="' + cy + '" x2="' + (cx + 4) + '" y2="' + cy + '" stroke="#000" stroke-width="0.35"/>' +
+      '<line x1="' + cx + '" y1="' + (cy - 4) + '" x2="' + cx + '" y2="' + (cy + 4) + '" stroke="#000" stroke-width="0.35"/>';
+
+    const svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="100%" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
+      lines +
+      '<rect x="0.2" y="0.2" width="' + (w - 0.4) + '" height="' + (h - 0.4) + '" fill="none" stroke="#000" stroke-width="0.4"/>' +
+      cross(w / 2, h / 2) + cross(10, 10) + cross(w - 10, 10) + cross(10, h - 10) + cross(w - 10, h - 10) +
+      '<text x="' + (w / 2) + '" y="6" font-size="3.6" text-anchor="middle" fill="#000" font-family="sans-serif">套打校准页　网格 10mm　红线 50mm　' + w + '×' + h + 'mm</text>' +
+      '<text x="' + (w / 2) + '" y="' + (h - 3.4) + '" font-size="3.2" text-anchor="middle" fill="#555" font-family="sans-serif">量一下打印内容偏离纸边的距离，填进「套打偏移」</text>' +
+      '</svg>';
+
+    $('#printArea').innerHTML = '<div class="sheet" style="width:' + w + 'mm;height:' + h + 'mm;' + cfg.tf + '">' + svg + '</div>';
+    toast('校准页已生成，打印后量偏差');
+    printWithName('套打校准页_' + w + 'x' + h + 'mm', () => { window.print(); });
+  }
+
+  /* ================= 视图：统计 ================= */
+  function viewStats(){
+    const now = new Date();
+    const curYM = now.getFullYear() + '-' + pad(now.getMonth() + 1);
+    const curY = String(now.getFullYear());
+
+    const all = state.receipts.filter(r => r.status !== 'void');
+    const selCo = statsFilter.companyId ? getCo(statsFilter.companyId) : null;
+    const base = statsFilter.companyId ? all.filter(r => r.companyId === statsFilter.companyId) : all;
+    const inMonth = base.filter(r => monthOf(r.date) === curYM);
+    const inYear = base.filter(r => String(r.date).slice(0, 4) === curY);
+
+    const sum = arr => arr.reduce((s, r) => s + num(r.amount), 0);
+
+    /* 排行始终按全部企业算，选中哪家就高亮哪家，方便横向比 */
+    const byCo = {};
+    all.filter(r => String(r.date).slice(0, 4) === curY)
+      .forEach(r => { byCo[r.companyId] = (byCo[r.companyId] || 0) + num(r.amount); });
+    const coRank = Object.keys(byCo).map(id => ({ id, amt: byCo[id] })).sort((a, b) => b.amt - a.amt);
+    const maxCo = coRank.length ? coRank[0].amt : 1;
+    const coCount = Object.keys(base.reduce((m, r) => (m[r.companyId] = 1, m), {})).length;
+
+    const byMethod = {};
+    inYear.forEach(r => { byMethod[r.method || '其他'] = (byMethod[r.method || '其他'] || 0) + num(r.amount); });
+    const methodTotal = Object.values(byMethod).reduce((s, v) => s + v, 0) || 1;
+
+    const months = [];
+    for (let i = 5; i >= 0; i--){
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const ym = d.getFullYear() + '-' + pad(d.getMonth() + 1);
+      months.push({ ym, label: (d.getMonth() + 1) + '月', amt: sum(base.filter(r => monthOf(r.date) === ym)) });
+    }
+    const maxM = Math.max.apply(null, months.map(m => m.amt).concat([1]));
+
+    const coOpts = '<option value="">全部企业</option>' + state.companies.map(c =>
+      '<option value="' + c.id + '"' + (statsFilter.companyId === c.id ? ' selected' : '') + '>' +
+      esc(c.short || c.name) + (c.active === false ? '（已停用）' : '') + '</option>').join('');
+    const scopeName = selCo ? (selCo.short || selCo.name) : '全部企业';
+
+    return '' +
+    '<div class="filters">' +
+      '<div class="f"><label>企业</label><select onchange="setStatsCo(this.value)">' + coOpts + '</select></div>' +
+      (selCo ? '<button class="btn" onclick="setStatsCo(\'\')">看全部企业</button>' : '') +
+      '<div class="cap-hint" style="margin-left:auto;padding-bottom:7px">当前统计：<b>' + esc(scopeName) + '</b>' +
+        (selCo ? '' : '（共 ' + state.companies.length + ' 家）') + '</div>' +
+    '</div>' +
+
+    '<div class="stat-grid">' +
+      '<div class="stat"><div class="k">本月收款（' + (now.getMonth() + 1) + '月）</div>' +
+        '<div class="v">' + money(sum(inMonth)) + '</div><div class="d">共 ' + inMonth.length + ' 笔</div></div>' +
+      '<div class="stat"><div class="k">本年累计（' + curY + '）</div>' +
+        '<div class="v">' + money(sum(inYear)) + '</div><div class="d">共 ' + inYear.length + ' 笔' +
+          (selCo ? '' : '，跨 ' + coCount + ' 家企业') + '</div></div>' +
+      '<div class="stat"><div class="k">今年平均单笔</div>' +
+        '<div class="v">' + money(inYear.length ? sum(inYear) / inYear.length : 0) + '</div><div class="d">用来判断大单占比</div></div>' +
+      '<div class="stat"><div class="k">笔数最多的付款方</div>' +
+        '<div class="v" style="font-size:17px">' + esc(topPayer(inYear)) + '</div><div class="d">本年按笔数统计</div></div>' +
+    '</div>' +
+
+    '<div class="two-col">' +
+      '<div class="card"><div class="card-h"><h2>近 6 个月收款走势</h2><span class="tip">' + esc(scopeName) + ' · 不含作废</span></div>' +
+        '<div class="card-b">' +
+          '<div class="bars">' + months.map(m => {
+            const h = Math.max(2, Math.round(m.amt / maxM * 100));
+            return '<div class="b"><div class="val">' + (m.amt ? Math.round(m.amt).toLocaleString('zh-CN') : '') + '</div>' +
+              '<div class="bar' + (m.ym === curYM ? ' hi' : '') + '" style="height:' + h + '%"></div>' +
+              '<div class="lb">' + m.label + '</div></div>';
+          }).join('') + '</div>' +
+          '<div class="cap-hint" style="margin-top:10px">合计 = ' + months.map(m => Math.round(m.amt)).join(' + ') + ' = ' + money(sum(months.map(m => ({ amount:m.amt })))) + '</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="card"><div class="card-h"><h2>收款渠道构成</h2><span class="tip">本年</span></div>' +
+        '<div class="card-b"><div class="mix">' +
+          (Object.keys(byMethod).length ? Object.keys(byMethod).sort((a, b) => byMethod[b] - byMethod[a]).map(k =>
+            '<div class="r"><span>' + esc(k) + '</span>' +
+              '<span class="track"><span class="fill" style="width:' + (byMethod[k] / methodTotal * 100).toFixed(1) + '%"></span></span>' +
+              '<span class="n">' + money(byMethod[k]) + '</span></div>').join('')
+            : '<div class="cap-hint">本年还没有收款记录</div>') +
+        '</div></div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="card" style="margin-top:18px"><div class="card-h"><h2>各企业本年收款排行</h2><span class="tip">点企业名只看这家，点「台账」看明细</span></div>' +
+      '<div class="card-b">' +
+        (coRank.length ? '<div class="mix">' + coRank.map(x => {
+          const co = getCo(x.id);
+          const on = statsFilter.companyId === x.id;
+          return '<div class="r" style="grid-template-columns:180px 1fr 120px 44px;cursor:pointer' +
+            (on ? ';background:#eaf3f9;border-radius:8px;padding:2px 8px;margin:0 -8px' : '') +
+            '" onclick="setStatsCo(' + (on ? '\'\'' : '\'' + x.id + '\'') + ')">' +
+            '<span>' + esc(co ? (co.short || co.name) : '（已删除企业）') + (on ? ' <b style="color:#1f5d80">·当前</b>' : '') + '</span>' +
+            '<span class="track"><span class="fill" style="width:' + (x.amt / maxCo * 100).toFixed(1) + '%"></span></span>' +
+            '<span class="n">' + money(x.amt) + '</span>' +
+            '<span style="font-size:11.5px;color:#2f6d93;text-align:right" onclick="event.stopPropagation();jumpLedger(\'' + x.id + '\')">台账</span>' +
+            '</div>';
+        }).join('') + '</div>' : '<div class="cap-hint">本年还没有收款记录</div>') +
+        '<div class="cap-hint" style="margin-top:12px">说明：本页只统计「有效」收据，已作废的不计入，避免虚增收入。排行始终按全部企业对比，不受上方筛选影响。</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function topPayer(list){
+    if (!list.length) return '—';
+    const m = {};
+    list.forEach(r => { const k = r.payer || '（未填）'; m[k] = (m[k] || 0) + 1; });
+    return Object.keys(m).sort((a, b) => m[b] - m[a])[0] || '—';
+  }
+  function jumpLedger(coId){ ledgerFilter.companyId = coId; ledgerFilter.from = ''; ledgerFilter.to = ''; switchView('ledger'); }
+  function setStatsCo(id){ statsFilter.companyId = id || ''; render(); }
+
+  /* ================= 视图：企业档案 ================= */
+  function viewCompanies(){
+    if (!state.companies.length){
+      return '<div class="card"><div class="empty"><b>还没有企业档案</b>点右上角「新增企业」建第一家。</div></div>';
+    }
+    return '<div class="co-grid">' + state.companies.map(c => {
+      const cnt = state.receipts.filter(r => r.companyId === c.id && r.status !== 'void').length;
+      const amt = state.receipts.filter(r => r.companyId === c.id && r.status !== 'void')
+        .reduce((s, r) => s + num(r.amount), 0);
+      return '<div class="co-card' + (c.active === false ? ' off' : '') + '">' +
+        '<div class="acts">' +
+          '<button class="btn sm" onclick="openCompanyEdit(\'' + c.id + '\')">编辑</button>' +
+        '</div>' +
+        '<h3>' + esc(c.name) + '</h3>' +
+        '<span class="code">编号开头 ' + esc(c.prefix || 'SJ') + '</span>' +
+        (c.active === false ? ' <span class="badge off">已停用</span>' : '') +
+        '<dl>' +
+          '<dt>税号</dt><dd>' + esc(c.taxNo || '未填') + '</dd>' +
+          '<dt>地址</dt><dd>' + esc(c.addr || '未填') + '</dd>' +
+          '<dt>电话</dt><dd>' + esc(c.tel || '未填') + '</dd>' +
+          '<dt>开户行</dt><dd>' + esc(c.bank || '未填') + '</dd>' +
+          '<dt>账号</dt><dd>' + esc(c.account || '未填') + '</dd>' +
+          '<dt>默认收款 / 开据</dt><dd>' + esc((defaultPerson(c, 'payee') || '未填') + ' / ' + (defaultPerson(c, 'drawer') || '未填')) + '</dd>' +
+          '<dt>项目</dt><dd>' + ((c.items || []).filter(x => x.active !== false).length || 0) + ' 个企业专属</dd>' +
+        '</dl>' +
+        '<div class="foot"><span>已开有效收据 ' + cnt + ' 张</span><span>' + money(amt) + '</span></div>' +
+      '</div>';
+    }).join('') + '</div>' +
+    '<div class="card" style="margin-top:18px"><div class="card-b">' +
+      '<div class="note-box blue">企业信息会直接印在收据抬头上，请按营业执照填写。<b>停用</b>的企业不会出现在开据下拉里，但历史收据和台账照常保留。</div>' +
+    '</div></div>';
+  }
+
+  /* 编辑企业时的临时名单（点保存才写回） */
+  let coEdit = { items: [], handlers: [] };
+
+  function coTagList(which){
+    const arr = which === 'items' ? coEdit.items : coEdit.handlers;
+    if (!arr.length){
+      return '<span style="font-size:12px;color:var(--hint)">还没有，下面输入名字后点「添加」</span>';
+    }
+    return arr.map((x, i) => {
+      const isH = which === 'handlers';
+      const defP = isH && x.default;
+      const defD = isH && x.defDrawer;
+      return '<span class="tag' + (defP || defD ? ' def' : '') + (x.active === false ? ' off' : '') + '">' +
+        esc(x.name) +
+        (defP ? '<span class="def-mark">收款</span>' : '') +
+        (defD ? '<span class="def-mark">开据</span>' : '') +
+        (isH
+          ? '<button type="button" class="tbtn star" title="设为默认收款人" onclick="coTagDefault(' + i + ',\'payee\')">' + (defP ? '★收' : '☆收') + '</button>' +
+            '<button type="button" class="tbtn star" title="设为默认开据人" onclick="coTagDefault(' + i + ',\'drawer\')">' + (defD ? '★开' : '☆开') + '</button>'
+          : '') +
+        '<button type="button" class="tbtn" title="' + (x.active === false ? '重新启用' : '停用（历史记录不受影响）') + '"' +
+          ' onclick="coTagToggle(' + i + ')">' + (x.active === false ? '启用' : '停用') + '</button>' +
+      '</span>';
+    }).join('');
+  }
+
+  function coTagRender(which){
+    const box = $(which === 'items' ? '#cItemsBox' : '#cHandlersBox');
+    if (box) box.innerHTML = coTagList(which);
+  }
+
+  function coTagAdd(which){
+    const input = $(which === 'items' ? '#cItemsNew' : '#cHandlersNew');
+    if (!input) return;
+    const name = String(input.value || '').trim();
+    if (!name) return;
+    const arr = which === 'items' ? coEdit.items : coEdit.handlers;
+    if (arr.some(x => x.name === name)){ toast('「' + name + '」已经在名单里', true); return; }
+    const item = { name: name, active: true };
+    if (which === 'handlers'){ item.default = arr.filter(x => x.active !== false).length === 0; item.defDrawer = false; }
+    arr.push(item);
+    input.value = '';
+    coTagRender(which);
+    input.focus();
+  }
+
+  function coTagToggle(i){
+    const arr = coEdit.handlers.some((x, j) => j === i) ? coEdit.handlers : coEdit.items;
+    if (!arr[i]) return;
+    arr[i].active = arr[i].active === false;
+    if (arr === coEdit.handlers && arr[i].active === false){
+      ['default', 'defDrawer'].forEach(function(key){
+        if (arr[i][key]){
+          arr[i][key] = false;
+          const next = arr.find(x => x.active !== false);
+          if (next) next[key] = true;
+        }
+      });
+    }
+    coTagRender(arr === coEdit.handlers ? 'handlers' : 'items');
+  }
+
+  function coTagDefault(i, role){
+    if (!coEdit.handlers[i]) return;
+    const key = role === 'drawer' ? 'defDrawer' : 'default';
+    coEdit.handlers.forEach((x, j) => { x[key] = (j === i); });
+    coEdit.handlers[i].active = true;
+    coTagRender('handlers');
+  }
+
+  function openCompanyEdit(id){
+    const c = id ? getCo(id) : null;
+    const d = c || { name:'', short:'', prefix:'', taxNo:'', addr:'', tel:'', bank:'', account:'', seal:'', sealPic:'', active:true };
+    coEdit = {
+      items: ((c && c.items) || []).map(x => ({ name:x.name, active:x.active !== false })),
+      handlers: ((c && c.handlers) || []).map(x => ({ name:x.name, default:!!x.default, defDrawer:!!x.defDrawer, active:x.active !== false }))
+    };
+    const body =
+      '<div class="field"><label>企业全称<i>*</i></label><input type="text" id="cName" value="' + esc(d.name) + '" placeholder="按营业执照全称"></div>' +
+      '<div class="row2">' +
+        '<div class="field"><label>简称（印在收据上）</label><input type="text" id="cShort" value="' + esc(d.short) + '" placeholder="例如：昆暖新能"></div>' +
+        '<div class="field"><label>编号前缀（2-4 位字母）</label><input type="text" id="cPrefix" value="' + esc(d.prefix) + '" placeholder="例如：KN" maxlength="4"></div>' +
+      '</div>' +
+      '<div class="row2">' +
+        '<div class="field"><label>纳税人识别号</label><input type="text" id="cTax" value="' + esc(d.taxNo) + '"></div>' +
+        '<div class="field"><label>电话（印在收据脚注）</label><input type="text" id="cTel" value="' + esc(d.tel) + '"></div>' +
+      '</div>' +
+      '<div class="field"><label>地址</label><input type="text" id="cAddr" value="' + esc(d.addr) + '"></div>' +
+      '<div class="row2">' +
+        '<div class="field"><label>开户银行</label><input type="text" id="cBank" value="' + esc(d.bank) + '"></div>' +
+        '<div class="field"><label>银行账号</label><input type="text" id="cAccount" value="' + esc(d.account) + '"></div>' +
+      '</div>' +
+      '<div class="field"><label>人员名单（收款人 / 开据人共用）</label>' +
+        '<div class="tag-list" id="cHandlersBox"></div>' +
+        '<div style="display:flex;gap:8px;margin-top:8px">' +
+          '<input type="text" id="cHandlersNew" placeholder="输入姓名，回车或点添加" style="flex:1;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd">' +
+          '<button type="button" class="btn" onclick="coTagAdd(\'handlers\')">添加</button>' +
+        '</div>' +
+        '<div class="cap-hint">☆收 / ☆开 分别设为默认收款人、默认开据人，开票时自动带入；已经用过的不要删，点「停用」即可</div>' +
+      '</div>' +
+      '<div class="field"><label>企业专属项目（全局库在「设置」里维护）</label>' +
+        '<div class="tag-list" id="cItemsBox"></div>' +
+        '<div style="display:flex;gap:8px;margin-top:8px">' +
+          '<input type="text" id="cItemsNew" placeholder="如：采暖费 / 报停费" style="flex:1;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd">' +
+          '<button type="button" class="btn" onclick="coTagAdd(\'items\')">添加</button>' +
+        '</div>' +
+        '<div class="cap-hint">开票时项目候选 = 这里的专属项目 + 全局库</div>' +
+      '</div>' +
+      (c ? '<div class="field"><label>状态</label><select id="cActive">' +
+        '<option value="1"' + (d.active !== false ? ' selected' : '') + '>启用</option>' +
+        '<option value="0"' + (d.active === false ? ' selected' : '') + '>停用（保留历史）</option></select></div>' : '');
+
+    const foot = '<button class="btn" onclick="closeModal()">取消</button>' +
+      (c && state.receipts.some(r => r.companyId === c.id)
+        ? '' : (c ? '<button class="btn danger" onclick="deleteCompany(\'' + c.id + '\')">删除</button>' : '')) +
+      '<button class="btn primary" onclick="saveCompany(' + (c ? "'" + c.id + "'" : 'null') + ')">保存</button>';
+
+    openModal(c ? '编辑企业' : '新增企业', body, foot);
+    coTagRender('items');
+    coTagRender('handlers');
+    [['#cItemsNew', 'items'], ['#cHandlersNew', 'handlers']].forEach(pair => {
+      const el = $(pair[0]);
+      if (el) el.addEventListener('keydown', e => {
+        if (e.key === 'Enter'){ e.preventDefault(); coTagAdd(pair[1]); }
+      });
+    });
+  }
+
+  function saveCompany(id){
+    const name = $('#cName').value.trim();
+    if (!name){ toast('请填写企业全称', true); return; }
+    let prefix = $('#cPrefix').value.trim().toUpperCase() || 'SJ';
+    const data = {
+      name: name,
+      short: $('#cShort').value.trim() || name.slice(0, 6),
+      prefix: prefix,
+      taxNo: $('#cTax').value.trim(),
+      tel: $('#cTel').value.trim(),
+      addr: $('#cAddr').value.trim(),
+      bank: $('#cBank').value.trim(),
+      account: $('#cAccount').value.trim(),
+      items: coEdit.items.map(x => ({ name:x.name, active:x.active !== false })),
+      handlers: (function(){
+        const list = coEdit.handlers.map(x => ({ name:x.name, default:!!x.default, defDrawer:!!x.defDrawer, active:x.active !== false }));
+        const act = list.filter(h => h.active !== false);
+        if (act.length && !act.some(h => h.default)) act[0].default = true;
+        return list;
+      })(),
+      active: $('#cActive') ? $('#cActive').value === '1' : true
+    };
+
+    if (id){
+      const c = getCo(id);
+      Object.assign(c, data);
+    } else {
+      const nc = Object.assign({ id: uid(), sealPic:'', createdAt: todayStr() }, data);
+      state.companies.push(nc);
+      state.currentCompanyId = nc.id;
+    }
+    save(); closeModal(); render(); toast('企业已保存');
+  }
+
+  function deleteCompany(id){
+    if (state.receipts.some(r => r.companyId === id)){ toast('该企业已有收据记录，只能停用不能删除', true); return; }
+    if (!confirm('确认删除这家企业档案？')) return;
+    state.companies = state.companies.filter(c => c.id !== id);
+    if (state.currentCompanyId === id) state.currentCompanyId = state.companies[0] ? state.companies[0].id : null;
+    save(); closeModal(); render(); toast('已删除');
+  }
+
+  /* ================= 视图：设置 ================= */
+  function viewSettings(){
+    const s = state.settings;
+
+    const pNow = PAPERS[s.paper] || PAPERS.a4x2;
+    const paperCards = '<div style="display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border:1px solid #9dc0d8;background:#f2f8fc;border-radius:9px">' +
+      '<span style="flex:1"><b style="font-size:13px">A4 二联（一张 A4 打两联）</b><br>' +
+      '<span style="font-size:12px;color:#69737f">纸张 A4 竖向 210×297；上联「第一联 存根」、下联「第二联 客户」，' +
+      '中间 148.5mm 处有横切标记，裁开每联 210×148.5。</span></span>' +
+      '<span style="font-size:11px;color:#7b8794;white-space:nowrap">' + pNow.w + '×' + pNow.h + 'mm</span>' +
+    '</div>';
+
+    const lib = state.itemLib || [];
+    const libTags = lib.length ? lib.map((x, i) =>
+      '<span class="tag' + (x.active === false ? ' off' : '') + '">' + esc(x.name) +
+        '<button type="button" class="tbtn" title="' + (x.active === false ? '重新启用' : '停用') + '"' +
+          ' onclick="libToggle(' + i + ')">' + (x.active === false ? '启用' : '停用') + '</button>' +
+      '</span>').join('')
+      : '<span style="font-size:12px;color:var(--hint)">还没有全局项目，下面输入后点「添加」</span>';
+
+    const alib = state.addrLib || [];
+    const addrTags = alib.length ? alib.map((x, i) =>
+      '<span class="tag' + (x.active === false ? ' off' : '') + '">' + esc(x.name) +
+        '<button type="button" class="tbtn" title="' + (x.active === false ? '重新启用' : '停用') + '"' +
+          ' onclick="addrToggle(' + i + ')">' + (x.active === false ? '启用' : '停用') + '</button>' +
+      '</span>').join('')
+      : '<span style="font-size:12px;color:var(--hint)">还没有常用地址，下面输入后点「添加」</span>';
+
+    return '' +
+    '<div class="two-col">' +
+      '<div class="card"><div class="card-h"><h2>纸张与显示</h2><span class="tip">一张 A4 出两联</span></div><div class="card-b">' +
+        paperCards +
+        '<div class="note-box" style="margin-top:12px">收据内容按毫米排布，明细不足 6 行会自动补空行，版面高度固定，行数变了也不会上下漂。两联内容完全一样，只是联次标注不同。</div>' +
+        '<div class="field" style="margin-top:16px"><label>显示设置</label>' +
+          '<label style="display:flex;gap:8px;align-items:center;padding:5px 0"><input type="checkbox" ' + (s.showFrame ? 'checked' : '') + ' onchange="setSetting(\'showFrame\',this.checked)"> 预览显示纸张边框（只影响屏幕，不打印）</label>' +
+          '<label style="display:flex;gap:8px;align-items:center;padding:5px 0"><input type="checkbox" ' + (s.showFootNote ? 'checked' : '') + ' onchange="setSetting(\'showFootNote\',this.checked)"> 页脚「不作发票使用」提示</label>' +
+        '</div>' +
+      '</div></div>' +
+
+      '<div class="card"><div class="card-h"><h2>套打偏移</h2><span class="tip">印偏了就调这里</span></div><div class="card-b">' +
+        '<div class="note-box" style="margin-bottom:14px">先打一张<b>校准页</b>，量出内容相对纸边的偏差，再填下面的数字。左右偏了改 X，上下偏了改 Y，一般 ±3mm 内能调齐。</div>' +
+        '<div class="row3">' +
+          '<div class="field"><label>左右偏移 mm</label>' +
+            '<input type="number" step="0.5" min="-20" max="20" value="' + num(s.offsetX) + '" onchange="setSetting(\'offsetX\',this.value)"></div>' +
+          '<div class="field"><label>上下偏移 mm</label>' +
+            '<input type="number" step="0.5" min="-20" max="20" value="' + num(s.offsetY) + '" onchange="setSetting(\'offsetY\',this.value)"></div>' +
+          '<div class="field"><label>内容缩放 %</label>' +
+            '<input type="number" step="0.5" min="80" max="120" value="' + (num(s.scale) || 100) + '" onchange="setSetting(\'scale\',this.value)"></div>' +
+        '</div>' +
+        '<div class="cap-hint" style="margin-bottom:14px">正数往下、往右；负数往上、往左。缩放用于打印机走纸偏长 / 偏短。</div>' +
+        '<label style="display:flex;gap:9px;align-items:flex-start;padding:11px 12px;border:1px solid ' +
+          (s.overlay ? '#9dc0d8' : '#e1e6ec') + ';background:' + (s.overlay ? '#f2f8fc' : '#fff') + ';border-radius:9px;cursor:pointer">' +
+          '<input type="checkbox" ' + (s.overlay ? 'checked' : '') + ' style="margin-top:2px" onchange="setSetting(\'overlay\',this.checked)">' +
+          '<span><b style="font-size:13px">套打模式</b><br>' +
+          '<span style="font-size:12px;color:#69737f">不画表格线和外框，只打印文字</span></span>' +
+        '</label>' +
+        '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
+          '<button class="btn primary" onclick="printCalibration()">打印校准页</button>' +
+          '<button class="btn" onclick="resetOffset()">偏移归零</button>' +
+        '</div>' +
+        '<div class="note-box blue" style="margin-top:14px">浏览器打印弹窗里：纸张 <b>A4</b>、方向<b>纵向（竖版）</b>、<b>边距选「无」</b>、缩放 <b>100%（默认）</b>、关掉<b>页眉页脚</b>。选错成横向会只打出一联。</div>' +
+      '</div></div>' +
+    '</div>' +
+
+    '<div class="card" style="margin-top:18px"><div class="card-h"><h2>全局项目库</h2><span class="tip">所有企业都能用</span></div><div class="card-b">' +
+      '<div class="note-box" style="margin-bottom:14px">开票时新建的项目会自动进这里；这里也可以先建好，各企业的项目候选 = 全局库 + 该企业专属项目。</div>' +
+      '<div class="tag-list" id="libBox">' + libTags + '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:10px">' +
+        '<input type="text" id="libNew" placeholder="新项目名，回车或点添加" style="flex:1;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd">' +
+        '<button class="btn" onclick="libAdd()">添加</button>' +
+      '</div>' +
+      '<div class="cap-hint">停用不删除：停用后不再出现在开票候选里，历史收据上的名字照旧保留。</div>' +
+    '</div></div>' +
+
+    '<div class="card" style="margin-top:18px"><div class="card-h"><h2>常用地址库</h2><span class="tip">开票时点 ▾ 直接选</span></div><div class="card-b">' +
+      '<div class="note-box" style="margin-bottom:14px">开票时填过的地址会自动收进这里；也可以先建好常用小区，所有企业共用。房号仍然每张单独填。</div>' +
+      '<div class="tag-list" id="addrBox">' + addrTags + '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:10px">' +
+        '<input type="text" id="addrNew" placeholder="小区 / 路段名，回车或点添加" style="flex:1;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd">' +
+        '<button class="btn" onclick="addrAdd()">添加</button>' +
+      '</div>' +
+      '<div class="cap-hint">停用不删除：停用后不再出现在候选里，历史收据上的地址照旧保留。</div>' +
+    '</div></div>' +
+
+    '<div class="card" style="margin-top:18px"><div class="card-h"><h2>备份与恢复</h2><span class="tip">换电脑、清缓存前一定要导一份</span></div><div class="card-b">' +
+      '<div class="note-box" style="margin-bottom:14px">数据存在<b>这台电脑的这个浏览器</b>里，不在文件里。所以：<b>换新版本直接覆盖 HTML 文件，数据不会丢</b>（换文件名、换目录也照旧）；会丢的情况是清浏览器数据、换电脑、换浏览器、用无痕模式。' +
+        '<br>当前：<b id="bkState">' + backupLineHTML() + '</b></div>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+        '<button class="btn primary" onclick="exportJSON()">导出完整备份（JSON）</button>' +
+        '<button class="btn" onclick="importJSON()">导入 / 合并备份</button>' +
+        '<button class="btn" onclick="exportCSV(true)">导出全部台账 CSV</button>' +
+      '</div>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">' +
+        '<button class="btn" onclick="exportProfile()">导出企业档案包（发给同事用）</button>' +
+        '<button class="btn" id="undoImportBtn" onclick="undoImport()" style="' + (hasPreimport() ? '' : 'display:none') + '">撤销上次导入</button>' +
+        '<button class="btn danger" onclick="wipeAll()">清空所有数据</button>' +
+      '</div>' +
+      '<div class="cap-hint" style="margin-top:12px">当前共 ' + state.companies.length + ' 家企业 · ' + state.receipts.length + ' 张收据（含作废）。' +
+        '备份文件是纯文本 JSON，可以直接存网盘、发微信给自己，体积很小。</div>' +
+      '<div class="note-box blue" style="margin-top:12px"><b>发给别人用的时候</b><br>' +
+        '· 只发这一个 HTML 文件，对方双击就能用，<b>不带你的数据</b>，对方那边是空的；<br>' +
+        '· 想让对方开箱就有企业档案 → 把「企业档案包」发给他，让他在导入里合并一次；<br>' +
+        '· 以后你更新版本，直接把新 HTML 覆盖旧文件即可，对方已经录的收据不受影响（数据在浏览器里，不在文件里）；<br>' +
+        '· 提醒对方：<b>固定用同一个浏览器打开、文件名别改来改去</b>。换浏览器相当于换一个空数据库。' +
+      '</div>' +
+    '</div></div>' +
+
+    '<div class="card" style="margin-top:18px"><div class="card-b">' +
+      '<div class="note-box"><b>边界说明</b><br>本工作台产出的是<b>内部管理收据</b>，用于记录收款、对账、给客户一个凭据。<br>它不是发票，不能用于报销抵扣、税前扣除，也不能替代增值税发票。需要开票的业务请走税务系统或委托代开。<br>本工具不做税务筹划，相关事项请咨询专业机构。</div>' +
+    '</div></div>';
+  }
+
+  function libAdd(){
+    const el = $('#libNew');
+    const name = el ? String(el.value || '').trim() : '';
+    if (!name) return;
+    state.itemLib = Array.isArray(state.itemLib) ? state.itemLib : [];
+    if (state.itemLib.some(x => x.name === name)){ toast('「' + name + '」已经在库里', true); return; }
+    state.itemLib.push({ name:name, active:true });
+    save(); render(); toast('已加入全局项目库');
+  }
+  function libToggle(i){
+    const x = (state.itemLib || [])[i];
+    if (!x) return;
+    x.active = x.active === false;
+    save(); render();
+  }
+
+  function addrAdd(){
+    const el = $('#addrNew');
+    const name = el ? String(el.value || '').trim() : '';
+    if (!name) return;
+    state.addrLib = Array.isArray(state.addrLib) ? state.addrLib : [];
+    if (state.addrLib.some(x => x.name === name)){ toast('「' + name + '」已经在地址库里', true); return; }
+    state.addrLib.push({ name:name, active:true });
+    save(); render(); toast('已加入常用地址');
+  }
+  function addrToggle(i){
+    const x = (state.addrLib || [])[i];
+    if (!x) return;
+    x.active = x.active === false;
+    save(); render();
+  }
+
+  function setSetting(k, v){
+    const numeric = { offsetX:1, offsetY:1, scale:1 };
+    state.settings[k] = numeric[k] ? num(v) : v;
+    if (k === 'scale') state.settings.scale = Math.max(50, Math.min(150, state.settings.scale || 100));
+    save();
+    if (k === 'paper' || k === 'overlay'){ render(); }
+    else if (view === 'new'){ updatePreview(); }
+  }
+  function resetOffset(){
+    state.settings.offsetX = 0;
+    state.settings.offsetY = 0;
+    state.settings.scale = 100;
+    save(); render(); toast('偏移已归零');
+  }
+
+  /* ================= 导入导出 ================= */
+  function exportCSV(all){
+    const list = all ? state.receipts.slice() : filteredReceipts();
+    if (!list.length){ toast('没有可导出的记录', true); return; }
+    const head = ['日期','收据编号','企业','付款方','地址','房号','电话','缴费年度起','缴费年度止','收费项目','数量','单价','金额','收款方式','开据人','收款人','状态','作废原因','备注'];
+    const rows = [];
+    list.forEach(r => {
+      const co = getCo(r.companyId);
+      const base = [r.date, r.no, co ? co.name : '', r.payer, r.addr || '', r.room || '', r.phone || '', r.periodFrom || '', r.periodTo || ''];
+      const tail = [r.method, r.drawer || '', r.payee || r.handler || '', r.status === 'void' ? '已作废' : '有效', r.voidReason || '', r.note || ''];
+      const items = (r.items && r.items.length) ? r.items : [{ name:'', amt:r.amount }];
+      items.forEach(it => {
+        rows.push(base.concat([
+          it.name || '',
+          num(it.qty) || '',
+          num(it.price) ? moneyPlain(it.price) : '',
+          moneyPlain(it.amt)
+        ]).concat(tail));
+      });
+    });
+    const csv = [head].concat(rows).map(line =>
+      line.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')
+    ).join('\r\n');
+    download('\uFEFF' + csv, '收据台账_' + todayStr() + '.csv', 'text/csv;charset=utf-8');
+    toast('已导出 ' + rows.length + ' 行明细');
+  }
+
+  /* ================= 备份与恢复 ================= */
+  const BACKUP_TIP_DAYS = 7;
+  let pendingImport = null;
+
+  function stamp(){
+    const d = new Date();
+    return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes());
+  }
+  function dateCN(ts){
+    if (!ts) return '';
+    const d = new Date(num(ts));
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+      ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  /* 备份状态：多久没备份、有多少张票是备份之后新增的 */
+  function backupStatus(){
+    const s = state.settings || {};
+    const n = state.receipts.length;
+    if (!n) return { level:'none', text:'', days:0, pending:0, last:num(s.lastBackupAt) };
+    const last = num(s.lastBackupAt);
+    const cnt = num(s.lastBackupCount);
+    if (!last) return { level:'warn', text:'还没备份过', days:0, pending:n, last:0 };
+    const days = Math.floor((Date.now() - last) / 86400000);
+    const pending = Math.max(0, n - cnt);
+    const level = (days >= BACKUP_TIP_DAYS || pending >= 10) ? 'warn' : 'ok';
+    let text = days <= 0 ? '今天已备份' : (days + ' 天前备份过');
+    if (pending > 0) text += ' · 新增 ' + pending + ' 张';
+    return { level, text, days, pending, last };
+  }
+
+  function exportJSON(){
+    const payload = {
+      app: '收据工作台',
+      kind: 'backup',
+      schema: 2,
+      exportedAt: new Date().toISOString(),
+      counts: { companies: state.companies.length, receipts: state.receipts.length },
+      state: state
+    };
+    download(JSON.stringify(payload, null, 2), '收据工作台备份_' + stamp() + '.json', 'application/json');
+    state.settings.lastBackupAt = Date.now();
+    state.settings.lastBackupCount = state.receipts.length;
+    save();
+    refreshBackupUI();
+    toast('备份已导出：' + state.companies.length + ' 家企业 / ' + state.receipts.length + ' 张收据');
+  }
+
+  /* 企业档案包：只带抬头/项目/经手人/地址库，不带收据 —— 发给同事开箱就有档案 */
+  function exportProfile(){
+    const s = state.settings;
+    const payload = {
+      app: '收据工作台',
+      kind: 'profile',
+      schema: 2,
+      exportedAt: new Date().toISOString(),
+      counts: { companies: state.companies.length, receipts: 0 },
+      state: {
+        version: 2,
+        companies: JSON.parse(JSON.stringify(state.companies || [])),
+        itemLib: JSON.parse(JSON.stringify(state.itemLib || [])),
+        addrLib: JSON.parse(JSON.stringify(state.addrLib || [])),
+        receipts: [],
+        settings: {
+          paper: s.paper, overlay: s.overlay,
+          offsetX: s.offsetX, offsetY: s.offsetY, scale: s.scale,
+          showFrame: s.showFrame, showFootNote: s.showFootNote
+        },
+        currentCompanyId: null
+      }
+    };
+    download(JSON.stringify(payload, null, 2), '收据工作台_企业档案_' + stamp() + '.json', 'application/json');
+    toast('档案包已导出：' + state.companies.length + ' 家企业（不含收据）');
+  }
+
+  function unpackBackup(d){
+    if (!d || typeof d !== 'object') return null;
+    if (d.kind && d.state) return { kind:d.kind, exportedAt:d.exportedAt || '', counts:d.counts || {}, state:d.state, raw:d };
+    if (Array.isArray(d.companies)) return { kind:'backup', exportedAt:'', counts:{ companies:d.companies.length, receipts:(d.receipts || []).length }, state:d, raw:d };
+    return null;
+  }
+
+  /* 读一个备份文件：直接给 File 就处理，不给就弹选择框（也方便以后接拖拽） */
+  function readBackupFile(f){
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = function(e){
+      let d;
+      try{ d = JSON.parse(e.target.result); }
+      catch(err){ toast('这不是有效的备份文件（读取失败）', true); return; }
+      const pack = unpackBackup(d);
+      if (!pack){ toast('文件格式不认识，不是本工具导出的备份', true); return; }
+      const st = normalizeState(JSON.parse(JSON.stringify(pack.state)));
+      if (!st){ toast('备份内容不完整（缺少企业档案）', true); return; }
+      pendingImport = { pack, state: st };
+      openModal('导入备份', importConfirmHTML(pendingImport), importFootHTML(pendingImport));
+    };
+    rd.readAsText(f, 'utf-8');
+  }
+
+  function importJSON(file){
+    if (file){ readBackupFile(file); return; }
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = '.json,application/json';
+    inp.onchange = function(){ readBackupFile(inp.files && inp.files[0]); };
+    inp.click();
+  }
+
+  function importConfirmHTML(p){
+    const st = p.state;
+    const isProfile = p.pack.kind === 'profile';
+    const rows = [
+      ['文件类型', isProfile ? '企业档案包（不含收据）' : '完整备份'],
+      ['导出时间', p.pack.exportedAt ? dateCN(new Date(p.pack.exportedAt).getTime()) : '未知'],
+      ['包含', st.companies.length + ' 家企业 · ' + st.receipts.length + ' 张收据 · ' + (st.itemLib || []).length + ' 个项目 · ' + (st.addrLib || []).length + ' 个地址'],
+      ['本机现有', state.companies.length + ' 家企业 · ' + state.receipts.length + ' 张收据']
+    ];
+    return '<div style="font-size:13px;line-height:1.9;margin-bottom:14px">' +
+        rows.map(r => '<div><span style="color:#7b8794;display:inline-block;width:80px">' + r[0] + '</span>' + esc(r[1]) + '</div>').join('') +
+      '</div>' +
+      '<div class="note-box">' +
+        '<b>合并</b>：本机已有的不动，把文件里缺的企业 / 收据 / 项目 / 地址补进来，两边都有的按较新的算。适合「同事那边也录了一些」「从另一台电脑汇总」。<br>' +
+        '<b>覆盖</b>：本机数据全部换成文件里的。覆盖前会自动留一份，可以在设置页点「撤销上次导入」找回。' +
+      '</div>';
+  }
+  function importFootHTML(p){
+    return '<button class="btn" onclick="closeModal()">取消</button>' +
+      '<button class="btn" onclick="doImport(\'replace\')">覆盖本机数据</button>' +
+      '<button class="btn primary" onclick="doImport(\'merge\')">合并进来</button>';
+  }
+
+  function mergeNameList(a, b, log, key){
+    const out = Array.isArray(a) ? a.slice() : [];
+    const has = {};
+    out.forEach(x => { if (x && x.name) has[x.name] = x; });
+    (Array.isArray(b) ? b : []).forEach(x => {
+      if (!x || !x.name) return;
+      if (!has[x.name]){
+        out.push({ name:x.name, active:x.active !== false, default: !!x.default });
+        has[x.name] = out[out.length - 1];
+        if (log) log[key] = (log[key] || 0) + 1;
+      } else if (has[x.name].active === false && x.active !== false){
+        has[x.name].active = true;   /* 任一边启用就算启用 */
+      }
+    });
+    return out;
+  }
+
+  function mergeState(dst, src){
+    const log = { companies:0, receipts:0, items:0, handlers:0, addrs:0, updated:0 };
+    (src.companies || []).forEach(sc => {
+      const cur = (dst.companies || []).find(c => c.id === sc.id) ||
+                  (dst.companies || []).find(c => c.name && c.name === sc.name);
+      if (!cur){
+        dst.companies.push(JSON.parse(JSON.stringify(sc)));
+        log.companies++;
+        return;
+      }
+      /* 同名/同 id：抬头以本机为准，只把项目、经手人合并过来 */
+      cur.items = mergeNameList(cur.items, sc.items, log, 'items');
+      cur.handlers = mergeNameList(cur.handlers, sc.handlers, log, 'handlers');
+    });
+    dst.itemLib = mergeNameList(dst.itemLib, src.itemLib, log, 'items');
+    dst.addrLib = mergeNameList(dst.addrLib, src.addrLib, log, 'addrs');
+
+    const byId = {};
+    (dst.receipts || []).forEach(r => { byId[r.id] = r; });
+    (src.receipts || []).forEach(sr => {
+      const cur = byId[sr.id];
+      if (!cur){
+        const copy = JSON.parse(JSON.stringify(sr));
+        dst.receipts.push(copy);
+        byId[sr.id] = copy;
+        log.receipts++;
+        return;
+      }
+      const a = String(cur.updatedAt || cur.createdAt || '');
+      const b = String(sr.updatedAt || sr.createdAt || '');
+      if (b > a){ Object.assign(cur, JSON.parse(JSON.stringify(sr))); log.updated++; }
+    });
+    return log;
+  }
+
+  function dupNos(){
+    const seen = {}, dup = [];
+    (state.receipts || []).forEach(r => {
+      const k = r.no;
+      if (!k) return;
+      if (seen[k]) dup.push(k); else seen[k] = 1;
+    });
+    return dup;
+  }
+
+  function doImport(mode){
+    const p = pendingImport;
+    if (!p) return;
+    const src = p.state;
+    migrate(src);
+
+    if (mode === 'merge'){
+      const log = mergeState(state, src);
+      const parts = [];
+      if (log.companies) parts.push('新企业 ' + log.companies);
+      if (log.receipts) parts.push('新收据 ' + log.receipts);
+      if (log.updated) parts.push('更新 ' + log.updated);
+      if (log.items) parts.push('新项目 ' + log.items);
+      if (log.addrs) parts.push('新地址 ' + log.addrs);
+      if (!parts.length) parts.push('没有新内容');
+      toast('合并完成：' + parts.join(' · '));
+    } else {
+      /* 覆盖前留一份，后悔了能撤 */
+      try{ localStorage.setItem(KEY + '_preimport', JSON.stringify(state)); }catch(e){}
+      const curCo = state.currentCompanyId;
+      state = src;
+      state.settings = Object.assign(blankState().settings, src.settings || {});
+      state.settings.copies = 1;
+      if (!getCo(curCo) && getCo(state.companies[0] && state.companies[0].id)) state.currentCompanyId = state.companies[0].id;
+      toast('已恢复：' + state.receipts.length + ' 张收据');
+    }
+
+    if (!state.currentCompanyId || !getCo(state.currentCompanyId)){
+      state.currentCompanyId = (state.companies[0] || {}).id || null;
+    }
+    save();
+    pendingImport = null;
+    closeModal();
+    editId = null;
+    if (view === 'new') render(); else render();
+    const dup = dupNos();
+    if (dup.length) setTimeout(() => toast('有 ' + dup.length + ' 个编号重复，台账里会看到，建议检查', true), 900);
+  }
+
+  function hasPreimport(){
+    try{ return !!localStorage.getItem(KEY + '_preimport'); }catch(e){ return false; }
+  }
+  function undoImport(){
+    let raw = null;
+    try{ raw = localStorage.getItem(KEY + '_preimport'); }catch(e){}
+    if (!raw){ toast('没有可撤销的导入记录', true); return; }
+    if (!confirm('把数据恢复到「上一次导入覆盖之前」的状态？当前数据会被替换，建议先导出备份。')) return;
+    try{
+      const d = normalizeState(JSON.parse(raw));
+      if (!d){ toast('撤销失败：记录已损坏', true); return; }
+      state = d; migrate(state);
+      if (!getCo(state.currentCompanyId)) state.currentCompanyId = (state.companies[0] || {}).id || null;
+      save();
+      localStorage.removeItem(KEY + '_preimport');
+      render();
+      toast('已撤销上次导入');
+    }catch(e){ toast('撤销失败：' + e.message, true); }
+  }
+
+  function wipeAll(){
+    if (!confirm('确定清空全部企业档案和收据记录？此操作不可撤销，建议先导出备份。')) return;
+    if (!confirm('再确认一次：真的要清空吗？')) return;
+    try{ localStorage.setItem(KEY + '_prewipe', JSON.stringify(state)); }catch(e){}
+    state = blankState();
+    state.currentCompanyId = state.companies[0].id;
+    save(); render(); toast('已清空（清空前那份数据仍在浏览器里，紧急时可找回）');
+  }
+
+  function refreshBackupUI(){
+    renderTopActions();
+    const el = $('#bkState');
+    if (el) el.innerHTML = backupLineHTML();
+    const undoBtn = $('#undoImportBtn');
+    if (undoBtn) undoBtn.style.display = hasPreimport() ? '' : 'none';
+  }
+
+  function backupLineHTML(){
+    const bs = backupStatus();
+    const s = state.settings;
+    const last = num(s.lastBackupAt);
+    if (!last) return '<b style="color:#a06112">还没有导出过备份</b>';
+    return '上次导出：' + dateCN(last) + '（当时 ' + num(s.lastBackupCount) + ' 张）';
+  }
+
+  function download(content, filename, mime){
+    const blob = new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 300);
+  }
+
+  /* ================= 弹层 ================= */
+  function openModal(title, body, foot, boxCls){
+    $('#modalTitle').textContent = title;
+    $('#modalBody').innerHTML = body;
+    $('#modalFoot').innerHTML = foot || '';
+    const box = $('#modal .modal-box');
+    if (box) box.className = 'modal-box' + (boxCls ? ' ' + boxCls : '');
+    $('#modal').classList.add('show');
+  }
+  function closeModal(){
+    $('#modal').classList.remove('show');
+    const box = $('#modal .modal-box');
+    if (box) box.className = 'modal-box';   /* 收据预览用的宽弹层，关掉就还原 */
+  }
+
+  /* ================= 绑定 ================= */
+  $('#nav').addEventListener('click', function(e){
+    const b = e.target.closest('button[data-view]');
+    if (b) switchView(b.dataset.view);
+  });
+  $('#companySelect').addEventListener('change', function(){
+    const v = this.value;
+    state.currentCompanyId = v;
+    save(); renderCompanySelect();
+    if (view === 'new' && !editId){
+      const f2 = $('#fCompany');
+      if (f2) f2.value = v;
+      onCompanyChange();
+    }
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeModal();
+    if ((e.ctrlKey || e.metaKey) && e.key === 's' && view === 'new'){ e.preventDefault(); saveReceipt(); }
+  });
+  /* 预览缩放：Ctrl + 滚轮；窗口尺寸变了重新适配 */
+  document.addEventListener('wheel', pvWheel, { passive:false });
+  let pvResizeT = null;
+  window.addEventListener('resize', function(){
+    if (view !== 'new') return;
+    clearTimeout(pvResizeT);
+    pvResizeT = setTimeout(pvApply, 120);
+  });
+  $('#modal').addEventListener('click', function(e){ if (e.target === this) closeModal(); });
+
+  /* 对外暴露 */
+  window.switchView = switchView;
+  window.addItem = addItem;
+  window.delItem = delItem;
+  window.resetForm = resetForm;
+  window.cancelEdit = cancelEdit;
+  window.saveReceipt = saveReceipt;
+  window.setFilter = setFilter;
+  window.clearFilter = clearFilter;
+  window.printOne = printOne;
+  window.printNameOf = printNameOf;
+  window.previewReceipt = previewReceipt;
+  window.previewPrint = previewPrint;
+  window.editReceipt = editReceipt;
+  window.voidReceipt = voidReceipt;
+  window.doVoid = doVoid;
+  window.restoreReceipt = restoreReceipt;
+  window.openCompanyEdit = openCompanyEdit;
+  window.saveCompany = saveCompany;
+  window.deleteCompany = deleteCompany;
+  window.setSetting = setSetting;
+  window.resetOffset = resetOffset;
+  window.printCalibration = printCalibration;
+  window.libAdd = libAdd;
+  window.libToggle = libToggle;
+  window.addrAdd = addrAdd;
+  window.addrToggle = addrToggle;
+  window.comboInput = comboInput;
+  window.comboOpen = comboOpen;
+  window.comboBlur = comboBlur;
+  window.comboToggle = comboToggle;
+  window.comboPick = comboPick;
+  window.comboNew = comboNew;
+  window.comboDisable = comboDisable;
+  window.comboKey = comboKey;
+  window.coTagAdd = coTagAdd;
+  window.coTagToggle = coTagToggle;
+  window.coTagDefault = coTagDefault;
+  window.updatePreview = updatePreview;
+  window.refreshTotals = refreshTotals;
+  window.exportCSV = exportCSV;
+  window.exportJSON = exportJSON;
+  window.importJSON = importJSON;
+  window.readBackupFile = readBackupFile;
+  window.exportProfile = exportProfile;
+  window.doImport = doImport;
+  window.undoImport = undoImport;
+  window.wipeAll = wipeAll;
+  window.closeModal = closeModal;
+  window.jumpLedger = jumpLedger;
+  window.pvZoom = pvZoom;
+  window.pvFitClick = pvFitClick;
+  window.setStatsCo = setStatsCo;
+
+  render();
+
+  /* 启动提示：上次主数据读坏了、已用快照救回；或很久没备份 */
+  if (recoveredFromBak){
+    setTimeout(() => toast('上次的数据有损坏，已自动从快照恢复。建议现在导出一份备份。', true), 600);
+  } else {
+    const bs = backupStatus();
+    if (bs.level === 'warn' && bs.last && bs.days >= BACKUP_TIP_DAYS){
+      setTimeout(() => toast('已经 ' + bs.days + ' 天没备份了，点右上角圆点导出一份', false), 800);
+    }
+  }
+})();
+</script>
+</body>
+</html>
